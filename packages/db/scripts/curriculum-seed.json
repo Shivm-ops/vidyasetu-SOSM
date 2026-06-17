@@ -1,0 +1,96 @@
+{
+  "classes": [
+    {
+      "grade": 5,
+      "subjects": [
+        {
+          "name": "Mathematics",
+          "code": "MATH5",
+          "iconUrl": "https://cdn-icons-png.flaticon.com/512/3771/3771278.png",
+          "chapters": [
+            {
+              "title": "Fractions (अपूर्णांक)",
+              "summary": "Understanding parts of a whole and basic fractional operations.",
+              "learningObjectives": [
+                "Identify numerator and denominator",
+                "Understand equivalent fractions",
+                "Add and subtract simple fractions"
+              ],
+              "keywords": ["Numerator", "Denominator", "Fraction", "Equivalent"],
+              "difficultyLevel": "MEDIUM",
+              "orderIndex": 1,
+              "concepts": [
+                {
+                  "name": "Introduction to Fractions",
+                  "explanation": "A fraction represents a part of a whole or, more generally, any number of equal parts.",
+                  "realLifeExample": "Slicing a pizza into 8 equal pieces. If you eat 3 pieces, you ate 3/8 of the pizza.",
+                  "villageExample": "Dividing a 2-acre farm into 4 equal plots for different crops. Each plot is 1/4 of the farm.",
+                  "activities": [
+                    { "title": "Paper Folding Fraction Activity" }
+                  ],
+                  "quizzes": [
+                    { "title": "Basic Fractions Quiz" }
+                  ],
+                  "projects": [
+                    { "title": "Farm Land Division Project", "category": "Mathematics" }
+                  ],
+                  "skills": [
+                    { "name": "Numerical Thinking", "description": "Ability to understand and work with numbers." },
+                    { "name": "Problem Solving", "description": "Finding solutions to difficult or complex issues." }
+                  ],
+                  "careers": [
+                    { "name": "Accountant", "category": "COMMERCE", "description": "A professional who performs accounting functions." },
+                    { "name": "Agriculture Scientist", "category": "AGRICULTURE", "description": "Researching farming techniques." }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Science",
+          "code": "SCI5",
+          "iconUrl": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+          "chapters": [
+            {
+              "title": "Water and Life (पाणी आणि जीवन)",
+              "summary": "Understanding the importance of water, the water cycle, and water conservation.",
+              "learningObjectives": [
+                "Explain the water cycle",
+                "Understand sources of water",
+                "Identify ways to conserve water"
+              ],
+              "keywords": ["Evaporation", "Condensation", "Conservation", "Groundwater"],
+              "difficultyLevel": "EASY",
+              "orderIndex": 1,
+              "concepts": [
+                {
+                  "name": "Water Cycle and Conservation",
+                  "explanation": "The continuous movement of water within the Earth and atmosphere.",
+                  "realLifeExample": "Water droplets forming on the outside of a cold glass of water (condensation).",
+                  "villageExample": "Building a small check dam (बंधारा) to stop rainwater and increase the groundwater level.",
+                  "activities": [
+                    { "title": "Evaporation Experiment" }
+                  ],
+                  "quizzes": [
+                    { "title": "Water Cycle Quiz" }
+                  ],
+                  "projects": [
+                    { "title": "Village Water Audit Project", "category": "Science Project" }
+                  ],
+                  "skills": [
+                    { "name": "Environmental Awareness", "description": "Understanding the environment and its protection." }
+                  ],
+                  "careers": [
+                    { "name": "Environmental Scientist", "category": "SCIENCE", "description": "Studying the environment and developing solutions." },
+                    { "name": "Civil Engineer", "category": "ENGINEERING", "description": "Designing and building infrastructure." }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

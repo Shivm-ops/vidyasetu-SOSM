@@ -1,0 +1,1987 @@
+// =============================================================================
+// VIDYASETU - Complete Database Schema
+// Supports: 5M Students | 100K Teachers | 500K Parents | 10K Schools
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto, pg_trgm]
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  PARENT
+  SCHOOL_ADMIN
+  PRINCIPAL
+  DISTRICT_OFFICER
+  NGO_ADMIN
+  CSR_ADMIN
+  CONTENT_CREATOR
+  MENTOR
+  SUPER_ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum Language {
+  MARATHI
+  ENGLISH
+  HINDI
+  GUJARATI
+  KANNADA
+  TRIBAL
+}
+
+enum StudentStage {
+  FOUNDATION // Class 1-4
+  DISCOVERY // Class 5-8
+  CAREER // Class 9-12
+}
+
+enum ContentType {
+  VIDEO
+  AUDIO
+  TEXT
+  PDF
+  INTERACTIVE
+  GAME
+  WORKSHEET
+  PRESENTATION
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AssessmentType {
+  QUIZ
+  TEST
+  EXAM
+  PRACTICE
+  DIAGNOSTIC
+  FORMATIVE
+  SUMMATIVE
+}
+
+enum MasteryStatus {
+  NOT_STARTED
+  LEARNING
+  PRACTICING
+  MASTERED
+}
+
+enum QuestionType {
+  MCQ
+  TRUE_FALSE
+  SHORT_ANSWER
+  LONG_ANSWER
+  FILL_BLANK
+  MATCH
+  ORDER
+  DRAW
+  VOICE
+}
+
+enum DifficultyLevel {
+  VERY_EASY
+  EASY
+  MEDIUM
+  HARD
+  VERY_HARD
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  HOLIDAY
+  EXAM_DAY
+}
+
+enum ScholarshipStatus {
+  OPEN
+  APPLIED
+  UNDER_REVIEW
+  SHORTLISTED
+  AWARDED
+  REJECTED
+  CLOSED
+}
+
+enum MoodType {
+  VERY_HAPPY
+  HAPPY
+  NEUTRAL
+  SAD
+  VERY_SAD
+  ANXIOUS
+  EXCITED
+  TIRED
+}
+
+enum NotificationType {
+  ATTENDANCE
+  MARKS
+  HOMEWORK
+  EXAM
+  SCHOLARSHIP
+  ACHIEVEMENT
+  ANNOUNCEMENT
+  PARENT_MEETING
+  SYSTEM
+}
+
+enum CareerCategory {
+  ENGINEERING
+  MEDICAL
+  ARTS
+  COMMERCE
+  AGRICULTURE
+  ITI_DIPLOMA
+  GOVERNMENT_JOB
+  ENTREPRENEURSHIP
+  DEFENSE
+  SPORTS
+  TEACHING
+  TECHNOLOGY
+  SKILLED_TRADE
+  CREATIVE
+}
+
+enum SchoolType {
+  GOVERNMENT
+  SEMI_GOVERNMENT
+  AIDED
+  PRIVATE_UNAIDED
+  INTERNATIONAL
+  TRIBAL_ASHRAM
+  KENDRIYA_VIDYALAYA
+  NAVODAYA
+  NGO_RUN
+}
+
+enum Medium {
+  MARATHI
+  ENGLISH
+  URDU
+  SEMI_ENGLISH
+  HINDI
+}
+
+// =============================================================================
+// GEOGRAPHY
+// =============================================================================
+
+model State {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  nameMarathi String?
+  code        String     @unique
+  districts   District[]
+  createdAt   DateTime   @default(now())
+
+  @@map("states")
+}
+
+model District {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  nameMarathi String?
+  code        String   @unique
+  stateId     String   @db.Uuid
+  state       State    @relation(fields: [stateId], references: [id])
+  blocks      Block[]
+  schools     School[]
+  createdAt   DateTime @default(now())
+
+  @@map("districts")
+}
+
+model Block {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  nameMarathi String?
+  districtId  String    @db.Uuid
+  district    District  @relation(fields: [districtId], references: [id])
+  villages    Village[]
+  schools     School[]
+  createdAt   DateTime  @default(now())
+
+  @@map("blocks")
+}
+
+model Village {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  nameMarathi     String?
+  blockId         String                  @db.Uuid
+  block           Block                   @relation(fields: [blockId], references: [id])
+  schools         School[]
+  users           User[]
+  learningCircles VillageLearningCircle[]
+  createdAt       DateTime                @default(now())
+
+  @@map("villages")
+}
+
+// =============================================================================
+// SCHOOL
+// =============================================================================
+
+model School {
+  id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  udiseCode         String?                   @unique
+  name              String
+  nameMarathi       String?
+  schoolType        SchoolType
+  medium            Medium[]
+  address           String
+  pincode           String
+  villageId         String?                   @db.Uuid
+  village           Village?                  @relation(fields: [villageId], references: [id])
+  blockId           String?                   @db.Uuid
+  block             Block?                    @relation(fields: [blockId], references: [id])
+  districtId        String                    @db.Uuid
+  district          District                  @relation(fields: [districtId], references: [id])
+  latitude          Float?
+  longitude         Float?
+  principalName     String?
+  phone             String?
+  email             String?
+  website           String?
+  totalStudents     Int                       @default(0)
+  totalTeachers     Int                       @default(0)
+  hasElectricity    Boolean                   @default(false)
+  hasInternet       Boolean                   @default(false)
+  hasComputer       Boolean                   @default(false)
+  hasSmartBoard     Boolean                   @default(false)
+  hasLibrary        Boolean                   @default(false)
+  isActive          Boolean                   @default(true)
+  logoUrl           String?
+  classes           ClassGrade[]
+  users             User[]
+  assessments       Assessment[]
+  announcements     Announcement[]
+  offlineHub        OfflineHub?
+  analyticsSnapshot SchoolAnalyticsSnapshot[]
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+
+  @@index([districtId])
+  @@index([udiseCode])
+  @@map("schools")
+}
+
+model ClassGrade {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schoolId  String    @db.Uuid
+  school    School    @relation(fields: [schoolId], references: [id])
+  grade     Int // 1-12
+  sections  Section[]
+  createdAt DateTime  @default(now())
+
+  @@unique([schoolId, grade])
+  @@map("class_grades")
+}
+
+model Section {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classGradeId      String             @db.Uuid
+  classGrade        ClassGrade         @relation(fields: [classGradeId], references: [id])
+  name              String // A, B, C, Div-1
+  medium            Medium             @default(MARATHI)
+  teacherId         String?            @db.Uuid
+  teacher           User?              @relation("ClassTeacher", fields: [teacherId], references: [id])
+  enrollments       Enrollment[]
+  attendanceRecords AttendanceRecord[]
+  timetableSlots    TimetableSlot[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@map("sections")
+}
+
+// =============================================================================
+// USERS
+// =============================================================================
+
+model User {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role              UserRole
+  phone             String?            @unique
+  email             String?            @unique
+  passwordHash      String?
+  firstName         String
+  lastName          String
+  firstNameMarathi  String?
+  lastNameMarathi   String?
+  gender            Gender?
+  dateOfBirth       DateTime?
+  profilePhotoUrl   String?
+  preferredLanguage Language           @default(MARATHI)
+  villageId         String?            @db.Uuid
+  village           Village?           @relation(fields: [villageId], references: [id])
+  schoolId          String?            @db.Uuid
+  school            School?            @relation(fields: [schoolId], references: [id])
+  isActive          Boolean            @default(true)
+  isVerified        Boolean            @default(false)
+  isDeleted         Boolean            @default(false)
+  deletedAt         DateTime?
+  lastLoginAt       DateTime?
+  fcmToken          String?
+  deviceInfo        Json?
+  student           Student?
+  teacher           Teacher?
+  parent            Parent?
+  schoolAdmin       SchoolAdmin?
+  mentor            Mentor?
+  classTeacherOf    Section[]          @relation("ClassTeacher")
+  sentMessages      ChatMessage[]      @relation("MessageSender")
+  notifications     UserNotification[]
+  auditLogs         AuditLog[]
+  sessions          UserSession[]
+  communityPosts    CommunityPost[]
+
+  // Phase 5: DPDP Compliance
+  consentRecords     ConsentRecord[]
+  deletionRequests   DataDeletionRequest[]
+  parentConsents     ParentConsent[]       @relation("ParentConsents")
+  grievances         GrievanceTicket[]     @relation("UserGrievances")
+  resolvedGrievances GrievanceTicket[]     @relation("GrievanceResolver")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phone])
+  @@index([email])
+  @@index([schoolId])
+  @@index([role])
+  @@map("users")
+}
+
+model UserSession {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+  refreshToken String   @unique
+  sessionId    String?
+  deviceId     String?
+  deviceType   String?
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@map("user_sessions")
+}
+
+model Student {
+  id                      String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                  String                   @unique @db.Uuid
+  user                    User                     @relation(fields: [userId], references: [id])
+  studentId               String                   @unique // Formatted student ID: VS-2024-00001
+  aadhaarHash             String? // Hashed Aadhaar
+  grade                   Int
+  stage                   StudentStage
+  motherName              String?
+  fatherName              String?
+  guardianName            String?
+  castCategory            String? // SC/ST/OBC/OPEN
+  isOrphan                Boolean                  @default(false)
+  hasDisability           Boolean                  @default(false)
+  disabilityType          String?
+  isBPL                   Boolean                  @default(false)
+  isMigrant               Boolean                  @default(false)
+  enrollments             Enrollment[]
+  progress                StudentProgress[]
+  lessonCompletions       LessonCompletion[]
+  assessmentAttempts      AssessmentAttempt[]
+  attendanceRecords       AttendanceRecord[]
+  careerGoals             CareerGoal[]
+  scholarshipApplications ScholarshipApplication[]
+  badges                  StudentBadge[]
+  learningPoints          LearningPoints?
+  moodCheckIns            MoodCheckIn[]
+  aiConversations         AIConversation[]
+  skillPassport           SkillPassport?
+  wellbeingGoals          WellbeingGoal[]
+  parentLinks             ParentStudent[]
+  parentConsents          ParentConsent[]
+
+  // Phase 3: Intelligence Engine Relations
+  learningProfile      LearningIntelligenceProfile?
+  dreamCareers         DreamCareer[]
+  villageImpacts       VillageImpact[]
+  aiProjects           AIProject[]
+  teacherInterventions TeacherIntervention[]
+  scholarshipMatches   ScholarshipMatch[]
+  // Phase 6: VidyaSetu V2 Enterprise OS Scores
+  learningScore        Float                        @default(0.0)
+  skillScore           Float                        @default(0.0)
+  careerReadinessScore Float                        @default(0.0)
+  innovationScore      Float                        @default(0.0)
+  communityImpactScore Float                        @default(0.0)
+  overallGrowthScore   Float                        @default(0.0)
+
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  LearningGapAnalysis      LearningGapAnalysis[]
+  SkillEnrollment          SkillEnrollment[]
+  InnovationPortfolio      InnovationPortfolio[]
+  VillageProjectSubmission VillageProjectSubmission[]
+  StudentConceptMastery    StudentConceptMastery[]
+  StudentGrowthTimeline    StudentGrowthTimeline[]
+  CareerDNAProfile         CareerDNAProfile?
+
+  @@index([grade])
+  @@index([stage])
+  @@index([studentId])
+  @@map("students")
+}
+
+model Teacher {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String             @unique @db.Uuid
+  user               User               @relation(fields: [userId], references: [id])
+  employeeId         String             @unique
+  qualification      String?
+  specialization     String[]
+  subjects           String[]
+  experienceYears    Int                @default(0)
+  isActive           Boolean            @default(true)
+  lessonPlans        LessonPlan[]
+  assessmentsCreated Assessment[]
+  questionBanks      QuestionBankItem[]
+  homeworkAssigned   Homework[]
+  attendanceTaken    AttendanceRecord[] @relation("AttendanceTaker")
+  aiConversations    AIConversation[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@map("teachers")
+}
+
+model Parent {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String           @unique @db.Uuid
+  user            User             @relation(fields: [userId], references: [id])
+  occupation      String?
+  income          Float?
+  children        ParentStudent[]
+  aiConversations AIConversation[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("parents")
+}
+
+model ParentStudent {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  parentId  String   @db.Uuid
+  parent    Parent   @relation(fields: [parentId], references: [id])
+  studentId String   @db.Uuid
+  student   Student  @relation(fields: [studentId], references: [id])
+  relation  String // MOTHER, FATHER, GUARDIAN
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([parentId, studentId])
+  @@map("parent_students")
+}
+
+model SchoolAdmin {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @unique @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+  role      String // PRINCIPAL, VICE_PRINCIPAL, ADMIN, CLERK
+  createdAt DateTime @default(now())
+
+  @@map("school_admins")
+}
+
+model Mentor {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String       @unique @db.Uuid
+  user        User         @relation(fields: [userId], references: [id])
+  expertise   String[]
+  bio         String?
+  bioMarathi  String?
+  isAvailable Boolean      @default(true)
+  mentorships Mentorship[]
+  createdAt   DateTime     @default(now())
+
+  @@map("mentors")
+}
+
+model Enrollment {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId    String    @db.Uuid
+  student      Student   @relation(fields: [studentId], references: [id])
+  sectionId    String    @db.Uuid
+  section      Section   @relation(fields: [sectionId], references: [id])
+  academicYear String // "2024-25"
+  rollNumber   Int?
+  isActive     Boolean   @default(true)
+  enrolledAt   DateTime  @default(now())
+  leftAt       DateTime?
+
+  @@unique([studentId, sectionId, academicYear])
+  @@index([sectionId, academicYear])
+  @@map("enrollments")
+}
+
+// =============================================================================
+// CURRICULUM
+// =============================================================================
+
+model Subject {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  nameMarathi String?
+  nameHindi   String?
+  code        String        @unique
+  grade       Int? // null means cross-grade
+  stage       StudentStage?
+  iconUrl     String?
+  colorCode   String?
+  chapters    Chapter[]
+  createdAt   DateTime      @default(now())
+
+  @@map("subjects")
+}
+
+model Chapter {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subjectId    String  @db.Uuid
+  subject      Subject @relation(fields: [subjectId], references: [id])
+  title        String
+  titleMarathi String?
+  titleHindi   String?
+  description  String?
+  orderIndex   Int
+  grade        Int
+  term         Int? // 1 or 2
+  iconUrl      String?
+
+  // Phase 4: Intelligence Engine Metadata
+  summary            String?
+  learningObjectives String[]
+  keywords           String[]
+  difficultyLevel    DifficultyLevel?
+
+  lessons   Lesson[]
+  topics    CurriculumTopic[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  Concept   Concept[]
+
+  @@index([subjectId, grade])
+  @@map("chapters")
+}
+
+model Lesson {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chapterId          String             @db.Uuid
+  chapter            Chapter            @relation(fields: [chapterId], references: [id])
+  title              String
+  titleMarathi       String?
+  titleHindi         String?
+  description        String?
+  descriptionMarathi String?
+  orderIndex         Int
+  estimatedMinutes   Int                @default(30)
+  difficultyLevel    DifficultyLevel    @default(MEDIUM)
+  contentType        ContentType
+  status             ContentStatus      @default(DRAFT)
+  contents           LessonContent[]
+  completions        LessonCompletion[]
+  activities         LessonActivity[]
+  questionBank       QuestionBankItem[]
+  lessonPlans        LessonPlan[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([chapterId])
+  @@map("lessons")
+}
+
+model LessonContent {
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lessonId           String      @db.Uuid
+  lesson             Lesson      @relation(fields: [lessonId], references: [id])
+  language           Language
+  contentType        ContentType
+  title              String?
+  body               String? // Rich text / HTML
+  videoUrl           String?
+  videoUrlHLS        String? // HLS stream URL
+  audioUrl           String?
+  fileUrl            String?
+  thumbnailUrl       String?
+  durationSecs       Int?
+  fileSizeBytes      BigInt?
+  isOfflineAvailable Boolean     @default(true)
+  orderIndex         Int         @default(0)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([lessonId, language])
+  @@map("lesson_contents")
+}
+
+model LessonActivity {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lessonId            String   @db.Uuid
+  lesson              Lesson   @relation(fields: [lessonId], references: [id])
+  title               String
+  titleMarathi        String?
+  activityType        String // DRAWING, GAME, EXPERIMENT, CRAFT, DISCUSSION
+  instructions        String?
+  instructionsMarathi String?
+  materials           String[]
+  durationMins        Int?
+  ageGroup            String?
+  createdAt           DateTime @default(now())
+
+  @@map("lesson_activities")
+}
+
+model LessonCompletion {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId     String   @db.Uuid
+  student       Student  @relation(fields: [studentId], references: [id])
+  lessonId      String   @db.Uuid
+  lesson        Lesson   @relation(fields: [lessonId], references: [id])
+  completedAt   DateTime @default(now())
+  timeSpentSecs Int      @default(0)
+  watchPercent  Float?
+  pointsEarned  Int      @default(0)
+  isOffline     Boolean  @default(false)
+
+  @@unique([studentId, lessonId])
+  @@index([studentId])
+  @@map("lesson_completions")
+}
+
+// =============================================================================
+// ASSESSMENT ENGINE
+// =============================================================================
+
+model QuestionBankItem {
+  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lessonId            String?          @db.Uuid
+  lesson              Lesson?          @relation(fields: [lessonId], references: [id])
+  teacherId           String?          @db.Uuid
+  teacher             Teacher?         @relation(fields: [teacherId], references: [id])
+  questionType        QuestionType
+  difficulty          DifficultyLevel
+  grade               Int
+  subjectCode         String?
+  chapter             String?
+  language            Language         @default(MARATHI)
+  questionText        String
+  questionTextMarathi String?
+  questionTextHindi   String?
+  questionImageUrl    String?
+  options             Json? // [{text, isCorrect, explanation}]
+  correctAnswer       String?
+  explanation         String?
+  explanationMarathi  String?
+  tags                String[]
+  bloomLevel          String? // REMEMBER, UNDERSTAND, APPLY, ANALYZE, EVALUATE, CREATE
+  timeSeconds         Int              @default(60)
+  usageCount          Int              @default(0)
+  avgScore            Float?
+  isAIGenerated       Boolean          @default(false)
+  isApproved          Boolean          @default(false)
+  assessmentItems     AssessmentItem[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([grade, subjectCode])
+  @@index([difficulty])
+  @@map("question_bank_items")
+}
+
+model Assessment {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schoolId            String?             @db.Uuid
+  school              School?             @relation(fields: [schoolId], references: [id])
+  createdById         String              @db.Uuid
+  createdBy           Teacher             @relation(fields: [createdById], references: [id])
+  title               String
+  titleMarathi        String?
+  assessmentType      AssessmentType
+  grade               Int
+  subjectCode         String?
+  instructions        String?
+  instructionsMarathi String?
+  totalMarks          Int
+  passingMarks        Int
+  durationMinutes     Int
+  startTime           DateTime?
+  endTime             DateTime?
+  isPublished         Boolean             @default(false)
+  isRandomized        Boolean             @default(false)
+  allowBacktrack      Boolean             @default(true)
+  showResult          Boolean             @default(true)
+  items               AssessmentItem[]
+  attempts            AssessmentAttempt[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  ConceptQuiz         ConceptQuiz[]
+
+  @@index([grade, subjectCode])
+  @@map("assessments")
+}
+
+model AssessmentItem {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assessmentId String           @db.Uuid
+  assessment   Assessment       @relation(fields: [assessmentId], references: [id])
+  questionId   String           @db.Uuid
+  question     QuestionBankItem @relation(fields: [questionId], references: [id])
+  marks        Int              @default(1)
+  orderIndex   Int
+  answers      StudentAnswer[]
+
+  @@unique([assessmentId, questionId])
+  @@map("assessment_items")
+}
+
+model AssessmentAttempt {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId       String          @db.Uuid
+  student         Student         @relation(fields: [studentId], references: [id])
+  assessmentId    String          @db.Uuid
+  assessment      Assessment      @relation(fields: [assessmentId], references: [id])
+  startedAt       DateTime        @default(now())
+  submittedAt     DateTime?
+  timeSpentSecs   Int             @default(0)
+  marksObtained   Float?
+  percentScore    Float?
+  isPassed        Boolean?
+  isAutoSubmitted Boolean         @default(false)
+  feedback        String?
+  answers         StudentAnswer[]
+  createdAt       DateTime        @default(now())
+
+  @@index([studentId, assessmentId])
+  @@map("assessment_attempts")
+}
+
+model StudentAnswer {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  attemptId        String            @db.Uuid
+  attempt          AssessmentAttempt @relation(fields: [attemptId], references: [id])
+  assessmentItemId String            @db.Uuid
+  assessmentItem   AssessmentItem    @relation(fields: [assessmentItemId], references: [id])
+  answerText       String?
+  answerOptionId   String?
+  answerFileUrl    String?
+  isCorrect        Boolean?
+  marksAwarded     Float?
+  aiEvaluation     Json?
+  createdAt        DateTime          @default(now())
+
+  @@map("student_answers")
+}
+
+// =============================================================================
+// HOMEWORK
+// =============================================================================
+
+model Homework {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teacherId          String               @db.Uuid
+  teacher            Teacher              @relation(fields: [teacherId], references: [id])
+  sectionId          String               @db.Uuid
+  subjectCode        String
+  title              String
+  titleMarathi       String?
+  description        String?
+  descriptionMarathi String?
+  dueDate            DateTime
+  attachmentUrl      String?
+  isAIGenerated      Boolean              @default(false)
+  submissions        HomeworkSubmission[]
+  createdAt          DateTime             @default(now())
+
+  @@map("homeworks")
+}
+
+model HomeworkSubmission {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  homeworkId  String   @db.Uuid
+  homework    Homework @relation(fields: [homeworkId], references: [id])
+  studentId   String   @db.Uuid
+  fileUrl     String?
+  textAnswer  String?
+  submittedAt DateTime @default(now())
+  marks       Float?
+  feedback    String?
+  isLate      Boolean  @default(false)
+
+  @@unique([homeworkId, studentId])
+  @@map("homework_submissions")
+}
+
+// =============================================================================
+// ATTENDANCE
+// =============================================================================
+
+model AttendanceRecord {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId String           @db.Uuid
+  student   Student          @relation(fields: [studentId], references: [id])
+  sectionId String           @db.Uuid
+  section   Section          @relation(fields: [sectionId], references: [id])
+  date      DateTime         @db.Date
+  status    AttendanceStatus
+  takenById String           @db.Uuid
+  takenBy   Teacher          @relation("AttendanceTaker", fields: [takenById], references: [id])
+  remarks   String?
+  createdAt DateTime         @default(now())
+
+  @@unique([studentId, sectionId, date])
+  @@index([sectionId, date])
+  @@index([studentId])
+  @@map("attendance_records")
+}
+
+// =============================================================================
+// TIMETABLE
+// =============================================================================
+
+model TimetableSlot {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sectionId    String   @db.Uuid
+  section      Section  @relation(fields: [sectionId], references: [id])
+  teacherId    String   @db.Uuid
+  dayOfWeek    Int // 1=Monday...6=Saturday
+  periodNumber Int
+  startTime    String // "09:00"
+  endTime      String // "09:40"
+  subjectCode  String
+  academicYear String
+  createdAt    DateTime @default(now())
+
+  @@index([sectionId, dayOfWeek])
+  @@map("timetable_slots")
+}
+
+// =============================================================================
+// LESSON PLANS
+// =============================================================================
+
+model LessonPlan {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teacherId         String   @db.Uuid
+  teacher           Teacher  @relation(fields: [teacherId], references: [id])
+  lessonId          String   @db.Uuid
+  lesson            Lesson   @relation(fields: [lessonId], references: [id])
+  planDate          DateTime
+  objectives        String?
+  objectivesMarathi String?
+  activities        String?
+  materials         String?
+  assessment        String?
+  isAIGenerated     Boolean  @default(false)
+  aiPromptUsed      String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("lesson_plans")
+}
+
+// =============================================================================
+// PROGRESS TRACKING
+// =============================================================================
+
+model StudentProgress {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId        String    @db.Uuid
+  student          Student   @relation(fields: [studentId], references: [id])
+  subjectCode      String
+  grade            Int
+  academicYear     String
+  lessonsCompleted Int       @default(0)
+  totalLessons     Int       @default(0)
+  avgScore         Float?
+  streakDays       Int       @default(0)
+  totalTimeMinutes Int       @default(0)
+  lastActivityAt   DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([studentId, subjectCode, grade, academicYear])
+  @@index([studentId])
+  @@map("student_progress")
+}
+
+model LearningStreak {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId      String    @unique @db.Uuid
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  @@map("learning_streaks")
+}
+
+// =============================================================================
+// CAREER PLATFORM
+// =============================================================================
+
+model CareerPath {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String
+  nameMarathi          String?
+  category             CareerCategory
+  description          String?
+  descriptionMarathi   String?
+  eligibility          String?
+  entranceExams        String[]
+  avgSalary            String?
+  jobProspects         String?
+  roadmapSteps         Json?
+  relatedCareers       String[]
+  iconUrl              String?
+  isPopular            Boolean                @default(false)
+  careerGoals          CareerGoal[]
+  createdAt            DateTime               @default(now())
+  SkillCareerMapping   SkillCareerMapping[]
+  CareerVillageMapping CareerVillageMapping[]
+
+  @@map("career_paths")
+}
+
+model CareerGoal {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId       String     @db.Uuid
+  student         Student    @relation(fields: [studentId], references: [id])
+  careerPathId    String     @db.Uuid
+  careerPath      CareerPath @relation(fields: [careerPathId], references: [id])
+  targetYear      Int?
+  currentProgress Int        @default(0)
+  notes           String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@map("career_goals")
+}
+
+model Scholarship {
+  id                  String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String
+  nameMarathi         String?
+  provider            String
+  amount              Float?
+  grade               Int[] // Eligible grades
+  castCategory        String[] // SC, ST, OBC, OPEN, ALL
+  minScore            Float?
+  annualIncomeLimitRs Float?
+  applicationUrl      String?
+  deadline            DateTime?
+  description         String?
+  descriptionMarathi  String?
+  documentsRequired   String[]
+  isActive            Boolean                  @default(true)
+  applications        ScholarshipApplication[]
+  createdAt           DateTime                 @default(now())
+
+  @@map("scholarships")
+}
+
+model ScholarshipApplication {
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId     String            @db.Uuid
+  student       Student           @relation(fields: [studentId], references: [id])
+  scholarshipId String            @db.Uuid
+  scholarship   Scholarship       @relation(fields: [scholarshipId], references: [id])
+  status        ScholarshipStatus @default(APPLIED)
+  appliedAt     DateTime          @default(now())
+  notes         String?
+  documentsUrl  String[]
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([studentId, scholarshipId])
+  @@map("scholarship_applications")
+}
+
+// =============================================================================
+// GAMIFICATION
+// =============================================================================
+
+model Badge {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String
+  nameMarathi        String?
+  description        String?
+  descriptionMarathi String?
+  iconUrl            String
+  category           String // ACADEMIC, ATTENDANCE, SKILL, COMMUNITY, STREAK
+  criteria           Json? // { type: "streak", value: 7 }
+  pointsReward       Int            @default(0)
+  isSecret           Boolean        @default(false)
+  studentBadges      StudentBadge[]
+  createdAt          DateTime       @default(now())
+
+  @@map("badges")
+}
+
+model StudentBadge {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId String   @db.Uuid
+  student   Student  @relation(fields: [studentId], references: [id])
+  badgeId   String   @db.Uuid
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime @default(now())
+  context   String? // What triggered this badge
+
+  @@unique([studentId, badgeId])
+  @@map("student_badges")
+}
+
+model LearningPoints {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId     String             @unique @db.Uuid
+  student       Student            @relation(fields: [studentId], references: [id])
+  totalPoints   Int                @default(0)
+  weeklyPoints  Int                @default(0)
+  monthlyPoints Int                @default(0)
+  level         Int                @default(1)
+  levelName     String             @default("नवशिक्या") // Beginner in Marathi
+  transactions  PointTransaction[]
+  updatedAt     DateTime           @updatedAt
+
+  @@map("learning_points")
+}
+
+model PointTransaction {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pointsId       String         @db.Uuid
+  learningPoints LearningPoints @relation(fields: [pointsId], references: [id])
+  points         Int
+  reason         String // LESSON_COMPLETE, QUIZ_PASS, STREAK, BADGE, etc
+  entityId       String? // ID of the related entity
+  createdAt      DateTime       @default(now())
+
+  @@map("point_transactions")
+}
+
+model SkillPassport {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId    String   @unique @db.Uuid
+  student      Student  @relation(fields: [studentId], references: [id])
+  skills       Json     @default("{}") // { "coding": 3, "math": 4, "communication": 2 }
+  certificates String[]
+  projects     Json[]   @default([])
+  updatedAt    DateTime @updatedAt
+
+  @@map("skill_passports")
+}
+
+// =============================================================================
+// WELLBEING
+// =============================================================================
+
+model MoodCheckIn {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId    String   @db.Uuid
+  student      Student  @relation(fields: [studentId], references: [id])
+  mood         MoodType
+  note         String?
+  isExamPeriod Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([studentId, createdAt])
+  @@map("mood_checkins")
+}
+
+model WellbeingGoal {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String    @db.Uuid
+  student     Student   @relation(fields: [studentId], references: [id])
+  title       String
+  targetDays  Int       @default(21)
+  currentDays Int       @default(0)
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("wellbeing_goals")
+}
+
+// =============================================================================
+// COMMUNITY
+// =============================================================================
+
+model VillageLearningCircle {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  nameMarathi String?
+  villageId   String           @db.Uuid
+  village     Village          @relation(fields: [villageId], references: [id])
+  description String?
+  members     VLCMember[]
+  events      CommunityEvent[]
+  posts       CommunityPost[]
+  createdAt   DateTime         @default(now())
+
+  @@map("village_learning_circles")
+}
+
+model VLCMember {
+  id       String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vlcId    String                @db.Uuid
+  vlc      VillageLearningCircle @relation(fields: [vlcId], references: [id])
+  userId   String                @db.Uuid
+  role     String                @default("MEMBER") // LEADER, MEMBER
+  joinedAt DateTime              @default(now())
+
+  @@unique([vlcId, userId])
+  @@map("vlc_members")
+}
+
+model CommunityEvent {
+  id           String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vlcId        String?                @db.Uuid
+  vlc          VillageLearningCircle? @relation(fields: [vlcId], references: [id])
+  title        String
+  titleMarathi String?
+  description  String?
+  eventDate    DateTime
+  venue        String?
+  eventType    String // COMPETITION, WORKSHOP, EXHIBITION, MEETING
+  createdAt    DateTime               @default(now())
+
+  @@map("community_events")
+}
+
+model CommunityPost {
+  id        String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vlcId     String                @db.Uuid
+  vlc       VillageLearningCircle @relation(fields: [vlcId], references: [id])
+  authorId  String                @db.Uuid
+  author    User                  @relation(fields: [authorId], references: [id])
+  content   String
+  imageUrl  String?
+  likes     Int                   @default(0)
+  createdAt DateTime              @default(now())
+
+  @@map("community_posts")
+}
+
+model Mentorship {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mentorId  String    @db.Uuid
+  mentor    Mentor    @relation(fields: [mentorId], references: [id])
+  studentId String    @db.Uuid
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  isActive  Boolean   @default(true)
+  goals     String?
+  notes     String?
+
+  @@map("mentorships")
+}
+
+// =============================================================================
+// ANNOUNCEMENTS & NOTIFICATIONS
+// =============================================================================
+
+model Announcement {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schoolId       String    @db.Uuid
+  school         School    @relation(fields: [schoolId], references: [id])
+  authorId       String    @db.Uuid
+  title          String
+  titleMarathi   String?
+  body           String
+  bodyMarathi    String?
+  targetAudience String[] // STUDENTS, TEACHERS, PARENTS, ALL
+  targetGrades   Int[]
+  attachmentUrl  String?
+  expiresAt      DateTime?
+  isPublished    Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  @@index([schoolId, createdAt])
+  @@map("announcements")
+}
+
+model UserNotification {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String           @db.Uuid
+  user         User             @relation(fields: [userId], references: [id])
+  type         NotificationType
+  title        String
+  titleMarathi String?
+  body         String
+  bodyMarathi  String?
+  data         Json?
+  isRead       Boolean          @default(false)
+  readAt       DateTime?
+  sentViaPush  Boolean          @default(false)
+  sentViaSMS   Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@map("user_notifications")
+}
+
+// =============================================================================
+// CHAT & COMMUNICATION
+// =============================================================================
+
+model ChatRoom {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String?
+  type      String // DIRECT, GROUP, ANNOUNCEMENT
+  members   ChatRoomMember[]
+  messages  ChatMessage[]
+  createdAt DateTime         @default(now())
+
+  @@map("chat_rooms")
+}
+
+model ChatRoomMember {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId     String    @db.Uuid
+  room       ChatRoom  @relation(fields: [roomId], references: [id])
+  userId     String    @db.Uuid
+  joinedAt   DateTime  @default(now())
+  lastReadAt DateTime?
+
+  @@unique([roomId, userId])
+  @@map("chat_room_members")
+}
+
+model ChatMessage {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId      String   @db.Uuid
+  room        ChatRoom @relation(fields: [roomId], references: [id])
+  senderId    String   @db.Uuid
+  sender      User     @relation("MessageSender", fields: [senderId], references: [id])
+  content     String
+  contentType String   @default("TEXT") // TEXT, IMAGE, VOICE, FILE
+  fileUrl     String?
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([roomId, createdAt])
+  @@map("chat_messages")
+}
+
+// =============================================================================
+// AI PLATFORM
+// =============================================================================
+
+model AIConversation {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId  String?     @db.Uuid
+  student    Student?    @relation(fields: [studentId], references: [id])
+  teacherId  String?     @db.Uuid
+  teacher    Teacher?    @relation(fields: [teacherId], references: [id])
+  parentId   String?     @db.Uuid
+  parent     Parent?     @relation(fields: [parentId], references: [id])
+  agentType  String // TUTOR, CAREER, HOMEWORK, TEACHER, PARENT, SCHOLARSHIP
+  language   Language    @default(MARATHI)
+  sessionId  String      @unique
+  messages   AIMessage[]
+  feedback   AIFeedback?
+  tokenCount Int         @default(0)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([studentId])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String         @db.Uuid
+  conversation   AIConversation @relation(fields: [conversationId], references: [id])
+  role           String // USER, ASSISTANT, SYSTEM
+  content        String
+  audioUrl       String?
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+model AIFeedback {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String         @unique @db.Uuid
+  conversation   AIConversation @relation(fields: [conversationId], references: [id])
+  rating         Int // 1-5
+  comment        String?
+  createdAt      DateTime       @default(now())
+
+  @@map("ai_feedback")
+}
+
+// =============================================================================
+// OFFLINE SYSTEM
+// =============================================================================
+
+model OfflineHub {
+  id         String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schoolId   String           @unique @db.Uuid
+  school     School           @relation(fields: [schoolId], references: [id])
+  deviceId   String           @unique
+  deviceType String           @default("RASPBERRY_PI")
+  ipAddress  String?
+  lastSyncAt DateTime?
+  storageGB  Float            @default(32)
+  usedGB     Float            @default(0)
+  syncLogs   OfflineSyncLog[]
+  createdAt  DateTime         @default(now())
+
+  @@map("offline_hubs")
+}
+
+model OfflineSyncLog {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hubId       String     @db.Uuid
+  hub         OfflineHub @relation(fields: [hubId], references: [id])
+  syncedAt    DateTime   @default(now())
+  itemsSynced Int        @default(0)
+  errors      Json?
+  durationMs  Int?
+
+  @@map("offline_sync_logs")
+}
+
+// =============================================================================
+// ANALYTICS
+// =============================================================================
+
+model SchoolAnalyticsSnapshot {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schoolId         String   @db.Uuid
+  school           School   @relation(fields: [schoolId], references: [id])
+  snapshotDate     DateTime @db.Date
+  totalStudents    Int
+  presentToday     Int
+  avgAttendancePct Float
+  lessonsCompleted Int
+  avgScore         Float?
+  activeStudents   Int // active last 7 days
+  createdAt        DateTime @default(now())
+
+  @@unique([schoolId, snapshotDate])
+  @@map("school_analytics_snapshots")
+}
+
+// =============================================================================
+// AUDIT LOGS
+// =============================================================================
+
+model AuditLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+  action       String // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, VIEW
+  entityType   String // Student, Assessment, Attendance, etc
+  entityId     String?
+  oldValue     Json?
+  newValue     Json?
+  ipAddress    String?
+  userAgent    String?
+  purpose      String? // WHY was this accessed
+  outcome      String? // SUCCESS, FAILURE, PARTIAL
+  dataAccessed String[] // Specific fields accessed
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@map("audit_logs")
+}
+
+// =============================================================================
+// PHASE 3: EDUCATIONAL INTELLIGENCE ENGINE
+// =============================================================================
+
+model LearningIntelligenceProfile {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId        String   @unique @db.Uuid
+  student          Student  @relation(fields: [studentId], references: [id])
+  weakConcepts     String[]
+  strongConcepts   String[]
+  learningVelocity Float    @default(1.0)
+  recoveryPlans    Json? // [{subject, weakTopics, missions}]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("learning_intelligence_profiles")
+}
+
+model DreamCareer {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId       String   @db.Uuid
+  student         Student  @relation(fields: [studentId], references: [id])
+  targetCareer    String
+  requiredSkills  String[]
+  progressPercent Float    @default(0.0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@map("dream_careers")
+}
+
+model ScholarshipMatch {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId       String    @db.Uuid
+  student         Student   @relation(fields: [studentId], references: [id])
+  scholarshipName String
+  matchScore      Float
+  deadline        DateTime?
+  requiredDocs    String[]
+  status          String    @default("RECOMMENDED")
+  createdAt       DateTime  @default(now())
+
+  @@map("scholarship_matches")
+}
+
+model VillageImpact {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String   @db.Uuid
+  student     Student  @relation(fields: [studentId], references: [id])
+  missionType String // WATER_CONSERVATION, TREE_PLANTATION, etc.
+  description String
+  impactScore Int
+  impactLevel String   @default("PARTICIPANT") // PARTICIPANT, CONTRIBUTOR, LEADER
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("village_impacts")
+}
+
+model AIProject {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId        String   @db.Uuid
+  student          Student  @relation(fields: [studentId], references: [id])
+  problemStatement String
+  aiSolution       String
+  projectPlan      Json?
+  impactMetrics    Json?
+  status           String   @default("DRAFT")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("ai_projects")
+}
+
+model TeacherIntervention {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId        String   @db.Uuid
+  student          Student  @relation(fields: [studentId], references: [id])
+  teacherId        String?  @db.Uuid
+  flagType         String // LOW_ATTENDANCE, LOW_PROGRESS, CONCEPT_GAP
+  severity         String // LOW, MEDIUM, HIGH
+  suggestedActions Json? // [{action, reason}]
+  isResolved       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("teacher_interventions")
+}
+
+// =============================================================================
+// PHASE 4: KNOWLEDGE & CONTENT INTELLIGENCE LAYER
+// =============================================================================
+
+model CurriculumTopic {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chapterId       String  @db.Uuid
+  chapter         Chapter @relation(fields: [chapterId], references: [id])
+  name            String
+  nameMarathi     String?
+  learningOutcome String?
+  difficulty      String // EASY, MEDIUM, HARD
+  estimatedMins   Int     @default(15)
+
+  // Dependencies & Content
+  dependencies    TopicDependency[]       @relation("DependsOn")
+  requiredBy      TopicDependency[]       @relation("PrerequisiteFor")
+  villageContexts VillageContextMapping[]
+  aiContent       AITeachingContent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("curriculum_topics")
+}
+
+model TopicDependency {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topicId        String          @db.Uuid
+  topic          CurriculumTopic @relation("DependsOn", fields: [topicId], references: [id])
+  prerequisiteId String          @db.Uuid
+  prerequisite   CurriculumTopic @relation("PrerequisiteFor", fields: [prerequisiteId], references: [id])
+  reason         String?
+  createdAt      DateTime        @default(now())
+
+  @@unique([topicId, prerequisiteId])
+  @@map("topic_dependencies")
+}
+
+model VillageContextMapping {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topicId     String          @db.Uuid
+  topic       CurriculumTopic @relation(fields: [topicId], references: [id])
+  analogy     String // e.g., "Sugarcane farming"
+  explanation String // AI generated explanation connecting the analogy
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("village_context_mappings")
+}
+
+model AITeachingContent {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topicId           String          @db.Uuid
+  topic             CurriculumTopic @relation(fields: [topicId], references: [id])
+  simpleExplanation String
+  storyExplanation  String
+  visualPrompts     String[]
+  practiceQuestions Json? // [{q, a}]
+  projectIdeas      String[]
+  language          String          @default("MARATHI")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("ai_teaching_contents")
+}
+
+model CareerProfile {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title             String
+  category          String // Agriculture, ITI, etc.
+  description       String
+  requiredEducation String[]
+  skillsNeeded      String[]
+  incomeRange       String
+  futureScope       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("career_profiles")
+}
+
+model ScholarshipProfile {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  description    String
+  category       String[] // Open, SC, ST, OBC
+  maxIncome      Float?
+  genderCriteria String? // MALE, FEMALE, ALL
+  districtRules  String[] // Allowed districts
+  deadline       DateTime?
+  requiredDocs   String[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("scholarship_profiles")
+}
+
+model OfflineSyncQueue {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String    @db.Uuid
+  contentType String // LESSON, VIDEO, QUIZ
+  contentId   String
+  status      String    @default("PENDING") // PENDING, SYNCED
+  priority    Int       @default(1)
+  createdAt   DateTime  @default(now())
+  syncedAt    DateTime?
+
+  @@index([studentId, status])
+  @@map("offline_sync_queues")
+}
+
+// =============================================================================
+// PHASE 5: DPDP COMPLIANCE & SECURITY
+// =============================================================================
+
+model ConsentRecord {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id])
+  consentType String // DATA_PROCESSING, TTS_VOICE, ANALYTICS
+  isGranted   Boolean   @default(false)
+  ipAddress   String?
+  userAgent   String?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, consentType])
+  @@map("consent_records")
+}
+
+model DataDeletionRequest {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id])
+  requestType String // ACCOUNT_DELETION, DATA_EXPORT
+  status      String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, REJECTED
+  reason      String?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("data_deletion_requests")
+}
+
+// =============================================================================
+// PHASE 6: VIDYASETU V2 OS EXTENSIONS
+// =============================================================================
+
+// --- Learning OS ---
+
+model Concept {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chapterId   String  @db.Uuid
+  chapter     Chapter @relation(fields: [chapterId], references: [id])
+  name        String
+  description String?
+
+  // Phase 4: Deep Content Context
+  explanation     String?
+  realLifeExample String?
+  villageExample  String?
+
+  createdAt             DateTime                @default(now())
+  StudentConceptMastery StudentConceptMastery[]
+  ConceptActivity       ConceptActivity[]
+  ConceptQuiz           ConceptQuiz[]
+  ConceptProject        ConceptProject[]
+  ConceptSkillMapping   ConceptSkillMapping[]
+
+  @@map("concepts")
+}
+
+model LearningGapAnalysis {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId        String   @db.Uuid
+  student          Student  @relation(fields: [studentId], references: [id])
+  weakSubjects     String[]
+  weakChapters     String[]
+  weakConcepts     String[]
+  improvementScore Float    @default(0.0)
+  studyPlan        Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("learning_gap_analyses")
+}
+
+model KnowledgeBaseArticle {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question  String
+  answer    String
+  // Represents a 1536-dimensional vector for OpenAI embeddings
+  embedding Json?
+  source    String?
+  createdAt DateTime @default(now())
+
+  @@map("knowledge_base_articles")
+}
+
+// --- Skill OS ---
+
+model SkillPath {
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String // Communication, AI Literacy, etc.
+  description         String?
+  iconUrl             String?
+  modules             SkillModule[]
+  createdAt           DateTime              @default(now())
+  SkillEnrollment     SkillEnrollment[]
+  ConceptSkillMapping ConceptSkillMapping[]
+  SkillCareerMapping  SkillCareerMapping[]
+
+  @@map("skill_paths")
+}
+
+model SkillModule {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  skillPathId String    @db.Uuid
+  skillPath   SkillPath @relation(fields: [skillPathId], references: [id])
+  title       String
+  description String?
+  content     Json?
+  createdAt   DateTime  @default(now())
+
+  @@map("skill_modules")
+}
+
+model SkillEnrollment {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId       String    @db.Uuid
+  student         Student   @relation(fields: [studentId], references: [id])
+  skillPathId     String    @db.Uuid
+  skillPath       SkillPath @relation(fields: [skillPathId], references: [id])
+  progressPercent Float     @default(0.0)
+  certificateUrl  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("skill_enrollments")
+}
+
+// --- Innovation OS ---
+
+model InnovationChallenge {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  description    String
+  category       String // Science Project, Startup
+  points         Int              @default(0)
+  createdAt      DateTime         @default(now())
+  ConceptProject ConceptProject[]
+
+  @@map("innovation_challenges")
+}
+
+model InnovationPortfolio {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId   String   @db.Uuid
+  student     Student  @relation(fields: [studentId], references: [id])
+  projectName String
+  description String
+  mediaUrls   String[]
+  score       Float    @default(0.0)
+  createdAt   DateTime @default(now())
+
+  @@map("innovation_portfolios")
+}
+
+// --- Village Development OS ---
+
+model VillageProjectTemplate {
+  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                    String // e.g., Water Conservation
+  description              String
+  impactPoints             Int                        @default(0)
+  createdAt                DateTime                   @default(now())
+  VillageProjectSubmission VillageProjectSubmission[]
+  CareerVillageMapping     CareerVillageMapping[]
+
+  @@map("village_project_templates")
+}
+
+model VillageProjectSubmission {
+  id         String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId  String                 @db.Uuid
+  student    Student                @relation(fields: [studentId], references: [id])
+  templateId String                 @db.Uuid
+  template   VillageProjectTemplate @relation(fields: [templateId], references: [id])
+  reportText String
+  proofUrls  String[]
+  status     String                 @default("PENDING") // PENDING, APPROVED
+  createdAt  DateTime               @default(now())
+
+  @@map("village_project_submissions")
+}
+
+model ParentConsent {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId         String    @db.Uuid
+  student           Student   @relation(fields: [studentId], references: [id])
+  parentUserId      String    @db.Uuid
+  parentUser        User      @relation("ParentConsents", fields: [parentUserId], references: [id])
+  consentVersion    String    @default("1.0")
+  consentGivenAt    DateTime
+  consentMethod     String // e.g., OTP_VERIFIED, SCHOOL_FORM, DIGITAL_SIGNATURE
+  ipAddress         String?
+  deviceFingerprint String?
+  isWithdrawn       Boolean   @default(false)
+  withdrawnAt       DateTime?
+  withdrawnReason   String?
+  dataCategories    String[] // e.g., ["academic", "attendance", "behavioral"]
+  legalBasis        String    @default("CONSENT")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([studentId])
+  @@index([parentUserId])
+  @@map("parent_consents")
+}
+
+model DataProcessingRecord {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityType       String // Student, Teacher
+  entityId         String   @db.Uuid
+  purpose          String // EDUCATIONAL, SCHOLARSHIP, ANALYTICS, AI_TUTOR
+  legalBasis       String
+  dataCategories   String[]
+  retentionPeriod  Int // days
+  thirdPartyShared Boolean  @default(false)
+  thirdParties     String[]
+  createdAt        DateTime @default(now())
+
+  @@map("data_processing_records")
+}
+
+model GrievanceTicket {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String    @db.Uuid
+  user         User      @relation("UserGrievances", fields: [userId], references: [id])
+  subject      String
+  description  String
+  status       String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  resolution   String?
+  resolvedById String?   @db.Uuid
+  resolvedBy   User?     @relation("GrievanceResolver", fields: [resolvedById], references: [id])
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("grievance_tickets")
+}
+
+// =============================================================================
+// PHASE 3: LEARNING INTELLIGENCE ENGINE & KNOWLEDGE GRAPH
+// =============================================================================
+
+model StudentConceptMastery {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId    String        @db.Uuid
+  student      Student       @relation(fields: [studentId], references: [id])
+  conceptId    String        @db.Uuid
+  concept      Concept       @relation(fields: [conceptId], references: [id])
+  status       MasteryStatus @default(NOT_STARTED)
+  masteryScore Float         @default(0.0) // 0 to 100
+  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime      @default(now())
+
+  @@unique([studentId, conceptId])
+  @@map("student_concept_masteries")
+}
+
+model StudentGrowthTimeline {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId        String   @db.Uuid
+  student          Student  @relation(fields: [studentId], references: [id])
+  monthYear        String // e.g. "2026-06"
+  academicGrowth   Float    @default(0.0)
+  skillGrowth      Float    @default(0.0)
+  innovationGrowth Float    @default(0.0)
+  communityGrowth  Float    @default(0.0)
+  recordedAt       DateTime @default(now())
+
+  @@unique([studentId, monthYear])
+  @@map("student_growth_timelines")
+}
+
+model CareerDNAProfile {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId         String   @unique @db.Uuid
+  student           Student  @relation(fields: [studentId], references: [id])
+  interests         String[]
+  topSkillIds       String[]
+  calculatedCareers String[] // Array of CareerPath IDs
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+
+  @@map("career_dna_profiles")
+}
+
+// --- Knowledge Graph Mappings ---
+
+model ConceptActivity {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conceptId   String   @db.Uuid
+  concept     Concept  @relation(fields: [conceptId], references: [id])
+  activityRef String // Simple reference to activity/video URL/Lesson module
+  createdAt   DateTime @default(now())
+
+  @@map("concept_activities")
+}
+
+model ConceptQuiz {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conceptId  String     @db.Uuid
+  concept    Concept    @relation(fields: [conceptId], references: [id])
+  quizId     String     @db.Uuid
+  assessment Assessment @relation(fields: [quizId], references: [id])
+  createdAt  DateTime   @default(now())
+
+  @@map("concept_quizzes")
+}
+
+model ConceptProject {
+  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conceptId   String              @db.Uuid
+  concept     Concept             @relation(fields: [conceptId], references: [id])
+  challengeId String              @db.Uuid
+  challenge   InnovationChallenge @relation(fields: [challengeId], references: [id])
+  createdAt   DateTime            @default(now())
+
+  @@map("concept_projects")
+}
+
+model ConceptSkillMapping {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conceptId   String    @db.Uuid
+  concept     Concept   @relation(fields: [conceptId], references: [id])
+  skillPathId String    @db.Uuid
+  skillPath   SkillPath @relation(fields: [skillPathId], references: [id])
+  weight      Float     @default(1.0)
+  createdAt   DateTime  @default(now())
+
+  @@map("concept_skill_mappings")
+}
+
+model SkillCareerMapping {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  skillPathId  String     @db.Uuid
+  skillPath    SkillPath  @relation(fields: [skillPathId], references: [id])
+  careerPathId String     @db.Uuid
+  careerPath   CareerPath @relation(fields: [careerPathId], references: [id])
+  relevance    Float      @default(1.0)
+  createdAt    DateTime   @default(now())
+
+  @@map("skill_career_mappings")
+}
+
+model CareerVillageMapping {
+  id           String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  careerPathId String                 @db.Uuid
+  careerPath   CareerPath             @relation(fields: [careerPathId], references: [id])
+  templateId   String                 @db.Uuid
+  template     VillageProjectTemplate @relation(fields: [templateId], references: [id])
+  createdAt    DateTime               @default(now())
+
+  @@map("career_village_mappings")
+}

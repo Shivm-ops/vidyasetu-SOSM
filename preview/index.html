@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>विद्यासेतू — Portal Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#f97316;--brand-dark:#ea580c;--brand-light:#fff7ed;--brand-100:#ffedd5;
+  --peacock:#06b6d4;--peacock-light:#ecfeff;--peacock-dark:#0891b2;
+  --green:#22c55e;--green-light:#f0fdf4;
+  --yellow:#eab308;--red:#ef4444;
+  --gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;
+  --gray-400:#9ca3af;--gray-500:#6b7280;--gray-700:#374151;--gray-900:#111827;
+  --white:#ffffff;--shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.1);
+  --radius:12px;--radius-lg:16px;--radius-xl:20px;
+}
+body{font-family:'Noto Sans Devanagari','Inter',sans-serif;background:#0f172a;color:var(--gray-900);min-height:100vh}
+
+/* ── TOP PORTAL SWITCHER ── */
+.portal-bar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(15,23,42,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  padding:0 24px;
+}
+.portal-bar-inner{
+  max-width:1400px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  height:56px;
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:16px;
+}
+.logo-text{color:#fff;font-weight:700;font-size:16px;line-height:1}
+.logo-sub{color:rgba(255,255,255,.4);font-size:10px;display:block;margin-top:2px}
+
+.portal-tabs{display:flex;gap:4px}
+.portal-tab{
+  padding:6px 14px;border-radius:8px;border:none;cursor:pointer;
+  font-size:13px;font-weight:500;font-family:inherit;
+  color:rgba(255,255,255,.5);background:transparent;transition:all .2s;
+}
+.portal-tab:hover{color:rgba(255,255,255,.8);background:rgba(255,255,255,.06)}
+.portal-tab.active{color:#fff;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3)}
+.portal-tab.active.teacher{background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.3)}
+.portal-tab.active.parent{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3)}
+.portal-tab.active.admin{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.3)}
+
+.preview-badge{
+  background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);
+  color:var(--brand);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;
+}
+
+/* ── MAIN CANVAS ── */
+.canvas{max-width:1400px;margin:0 auto;padding:24px}
+.portal-view{display:none}
+.portal-view.active{display:block}
+
+/* MOBILE FRAME */
+.device-frame{
+  width:390px;border-radius:44px;overflow:hidden;
+  background:#fff;
+  box-shadow:0 0 0 2px #1e293b,0 0 0 6px #0f172a,0 30px 60px rgba(0,0,0,.6);
+  margin:0 auto;position:relative;
+}
+.device-notch{
+  height:28px;background:#000;
+  border-radius:0 0 20px 20px;
+  width:120px;margin:0 auto;
+  position:relative;z-index:10;
+  margin-top:-1px;
+}
+.device-screen{background:#f9fafb;min-height:700px;overflow:hidden}
+
+/* WEB FRAME */
+.web-frame{
+  border-radius:16px;overflow:hidden;
+  background:#fff;
+  box-shadow:0 0 0 1px #1e293b,0 20px 60px rgba(0,0,0,.5);
+}
+.browser-bar{
+  background:#1e293b;padding:10px 16px;
+  display:flex;align-items:center;gap:10px;
+}
+.browser-dots{display:flex;gap:6px}
+.browser-dot{width:12px;height:12px;border-radius:50%}
+.browser-url{
+  flex:1;background:rgba(255,255,255,.06);border-radius:6px;
+  padding:5px 12px;font-size:12px;color:rgba(255,255,255,.4);font-family:monospace;
+}
+
+/* ── LAYOUT HELPERS ── */
+.split{display:grid;grid-template-columns:390px 1fr;gap:32px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:12px;align-items:center}
+.row-sb{display:flex;justify-content:space-between;align-items:center}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* ── STUDENT PORTAL ── */
+.hero-gradient{
+  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);
+  padding:20px 20px 28px;color:#fff;
+}
+.greeting-sm{color:rgba(255,255,255,.7);font-size:12px;margin-bottom:3px}
+.greeting-name{font-size:22px;font-weight:700}
+.greeting-school{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.stat-chips{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.stat-chip{
+  background:rgba(255,255,255,.15);border-radius:10px;
+  padding:8px 10px;text-align:center;
+}
+.stat-val{font-size:15px;font-weight:700;color:#fff}
+.stat-lbl{font-size:9px;color:rgba(255,255,255,.6);margin-top:1px}
+.att-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:3px}
+
+.section-pad{padding:16px 16px 0}
+.section-title{font-size:13px;font-weight:600;color:var(--gray-700);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+.mood-card{
+  margin:0 16px;background:#fff;border-radius:var(--radius-lg);
+  padding:14px;box-shadow:var(--shadow);
+}
+.mood-q{font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:10px}
+.moods{display:flex;justify-content:space-between}
+.mood-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px;border-radius:10px;cursor:pointer;border:none;background:transparent;
+  transition:all .2s;
+}
+.mood-btn:hover{background:var(--brand-light)}
+.mood-btn.sel{background:var(--brand-light);outline:2px solid var(--brand)}
+.mood-emoji{font-size:22px}
+.mood-lbl{font-size:9px;color:var(--gray-500)}
+
+.streak-banner{
+  margin:0 16px;
+  background:linear-gradient(135deg,#fff7ed,#ffedd5);
+  border:1px solid #fed7aa;border-radius:var(--radius-lg);
+  padding:12px 14px;display:flex;align-items:center;gap:12px;
+}
+.streak-fire{font-size:36px}
+.streak-title{font-size:15px;font-weight:700;color:var(--brand-dark)}
+.streak-sub{font-size:10px;color:var(--gray-500);margin-top:1px}
+.streak-dots{display:flex;gap:4px;margin-top:7px}
+.s-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.s-dot.done{background:var(--brand);color:#fff}
+.s-dot.today{background:var(--brand-dark);color:#fff;box-shadow:0 0 0 2px var(--brand)}
+.s-dot.empty{background:var(--gray-200);color:var(--gray-400)}
+
+.subj-grid{padding:0 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.subj-card{
+  background:#fff;border-radius:var(--radius);padding:12px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  box-shadow:var(--shadow);cursor:pointer;transition:transform .15s;border:1px solid var(--gray-100);
+}
+.subj-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.subj-icon-wrap{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.subj-name{font-size:11px;font-weight:600;text-align:center}
+
+/* AI TUTOR BUTTON */
+.ai-fab{
+  position:absolute;bottom:76px;right:16px;z-index:20;
+  background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+  border-radius:14px;padding:10px 14px;
+  display:flex;align-items:center;gap:6px;
+  box-shadow:0 8px 20px rgba(249,115,22,.4);
+  cursor:pointer;color:#fff;font-size:13px;font-weight:600;border:none;
+  transition:transform .2s;
+}
+.ai-fab:hover{transform:translateY(-2px)}
+
+/* AI CHAT PANEL */
+.ai-chat-panel{
+  background:#fff;border-radius:20px;overflow:hidden;
+  box-shadow:var(--shadow-lg);border:1px solid var(--gray-200);
+}
+.ai-chat-header{
+  background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+  padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
+}
+.ai-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.ai-name{color:#fff;font-weight:600;font-size:14px}
+.ai-subtitle{color:rgba(255,255,255,.7);font-size:11px}
+.chat-msgs{padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--gray-50)}
+.chat-bubble{max-width:80%;border-radius:14px;padding:10px 12px;font-size:12px;line-height:1.5}
+.chat-bubble.bot{background:#fff;color:var(--gray-700);border-radius:4px 14px 14px 14px;box-shadow:var(--shadow)}
+.chat-bubble.user{background:var(--brand);color:#fff;margin-left:auto;border-radius:14px 4px 14px 14px}
+.chat-input-wrap{
+  padding:10px 12px;border-top:1px solid var(--gray-200);
+  display:flex;gap:8px;align-items:center;background:#fff;
+}
+.chat-input{
+  flex:1;border:1px solid var(--gray-200);border-radius:10px;
+  padding:8px 12px;font-size:12px;outline:none;font-family:inherit;
+  background:var(--gray-50);
+}
+.chat-send{
+  width:32px;height:32px;border-radius:8px;background:var(--brand);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;
+}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;
+  background:#fff;border-top:1px solid var(--gray-100);
+  padding:8px 0 12px;display:flex;justify-content:space-around;
+}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.nav-icon{font-size:20px}
+.nav-lbl{font-size:9px;color:var(--gray-400)}
+.nav-item.active .nav-lbl{color:var(--brand);font-weight:600}
+.nav-item.active .nav-icon{filter:none}
+
+/* ── TEACHER PORTAL ── */
+.teacher-sidebar{
+  width:240px;background:#1e293b;min-height:600px;
+  display:flex;flex-direction:column;
+  border-radius:var(--radius-lg) 0 0 var(--radius-lg);
+}
+.t-sidebar-header{
+  padding:20px;border-bottom:1px solid rgba(255,255,255,.06);
+}
+.t-logo{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.t-logo-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:14px;
+}
+.t-logo-text{color:#fff;font-weight:700;font-size:14px}
+.teacher-info{display:flex;align-items:center;gap:10px}
+.teacher-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,var(--peacock),var(--peacock-dark));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;
+}
+.teacher-name{color:#fff;font-size:12px;font-weight:600}
+.teacher-school{color:rgba(255,255,255,.4);font-size:10px}
+.t-nav{padding:12px 10px;flex:1}
+.t-nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;cursor:pointer;
+  font-size:12px;color:rgba(255,255,255,.5);margin-bottom:2px;transition:all .2s;
+}
+.t-nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8)}
+.t-nav-item.active{background:rgba(249,115,22,.15);color:var(--brand);border-left:3px solid var(--brand)}
+.t-nav-icon{font-size:16px;width:20px;text-align:center}
+.t-nav-badge{
+  margin-left:auto;background:var(--red);color:#fff;
+  border-radius:20px;padding:2px 7px;font-size:9px;font-weight:700;
+}
+
+.teacher-main{flex:1;background:var(--gray-50);padding:24px;border-radius:0 var(--radius-lg) var(--radius-lg) 0}
+.t-page-title{font-size:18px;font-weight:700;color:var(--gray-900);margin-bottom:4px}
+.t-page-sub{font-size:12px;color:var(--gray-500);margin-bottom:20px}
+
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{
+  background:#fff;border-radius:var(--radius);padding:14px;
+  box-shadow:var(--shadow);
+}
+.stat-card-icon{
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;
+}
+.stat-card-val{font-size:22px;font-weight:700;color:var(--gray-900)}
+.stat-card-lbl{font-size:11px;color:var(--gray-500);margin-top:2px}
+
+.t-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.t-card{background:#fff;border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+.t-card-title{font-size:13px;font-weight:600;color:var(--gray-800);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* Attendance table */
+.att-table{width:100%;border-collapse:collapse}
+.att-table th{font-size:10px;color:var(--gray-500);font-weight:600;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--gray-100)}
+.att-table td{padding:8px 8px;border-bottom:1px solid var(--gray-50);font-size:12px}
+.att-badge{
+  display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;
+}
+.att-present{background:#dcfce7;color:#16a34a}
+.att-absent{background:#fee2e2;color:#dc2626}
+.att-late{background:#fef9c3;color:#ca8a04}
+
+/* AI panel */
+.ai-tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ai-tool-btn{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.12);border:none;cursor:pointer;
+  border-radius:10px;padding:10px 12px;font-size:12px;color:#fff;font-family:inherit;
+  transition:background .2s;
+}
+.ai-tool-btn:hover{background:rgba(255,255,255,.2)}
+
+.class-list .class-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;background:var(--gray-50);border-radius:8px;margin-bottom:6px;
+}
+.class-row-name{font-size:12px;font-weight:500;color:var(--gray-800)}
+.class-row-count{font-size:11px;color:var(--gray-500)}
+.tag-btn{
+  font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;
+}
+.tag-green{background:#dcfce7;color:#16a34a}
+
+/* ── PARENT PORTAL ── */
+.parent-hero{
+  background:linear-gradient(135deg,var(--peacock),var(--peacock-dark));
+  padding:20px 20px 28px;color:#fff;
+}
+.child-card-outer{
+  margin:0 16px;margin-top:-20px;
+  background:#fff;border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-lg);overflow:hidden;
+}
+.child-card-header{
+  background:linear-gradient(135deg,#fff7ed,#ffedd5);
+  padding:14px 16px;display:flex;align-items:center;gap:12px;
+}
+.child-avatar{
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.child-name{font-size:16px;font-weight:700;color:var(--gray-900)}
+.child-class{font-size:12px;color:var(--gray-500);margin-top:2px}
+.child-tags{display:flex;gap:6px;margin-top:6px}
+.child-tag{
+  background:var(--brand-light);color:var(--brand-dark);
+  padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;
+}
+
+.parent-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--gray-100)}
+.p-stat{padding:12px;text-align:center}
+.p-stat+.p-stat{border-left:1px solid var(--gray-100)}
+.p-stat-val{font-size:20px;font-weight:700;color:var(--gray-900)}
+.p-stat-lbl{font-size:10px;color:var(--gray-500);margin-top:2px}
+
+.p-section{padding:0 16px;margin-top:16px}
+.p-card{background:#fff;border-radius:var(--radius-lg);padding:14px;box-shadow:var(--shadow);margin-bottom:12px}
+.p-card-title{font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+
+.score-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 10px;background:var(--gray-50);border-radius:8px;margin-bottom:5px;
+}
+.score-sub{font-size:11px;font-weight:500;color:var(--gray-700)}
+.score-val{font-size:13px;font-weight:700}
+.score-pass{color:var(--green)}
+.score-fail{color:var(--red)}
+
+.mood-history{display:flex;gap:6px;padding:4px 0}
+.mh-item{display:flex;flex-direction:column;align-items:center;gap:3px}
+.mh-emoji{font-size:20px}
+.mh-date{font-size:9px;color:var(--gray-400)}
+
+.p-contact-btn{
+  width:100%;background:none;border:2px solid var(--peacock);
+  color:var(--peacock-dark);border-radius:var(--radius);
+  padding:12px;font-size:13px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:inherit;transition:all .2s;
+}
+.p-contact-btn:hover{background:var(--peacock-light)}
+
+/* ── ADMIN PORTAL ── */
+.admin-topbar{
+  background:#fff;border-bottom:1px solid var(--gray-200);
+  padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;
+}
+.admin-school-name{font-size:15px;font-weight:700;color:var(--gray-900)}
+.admin-udise{font-size:11px;color:var(--gray-500)}
+.admin-body{padding:24px 28px;background:var(--gray-50);min-height:580px}
+
+.admin-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi-card{
+  background:#fff;border-radius:var(--radius-lg);padding:16px;
+  box-shadow:var(--shadow);
+}
+.kpi-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;
+}
+.kpi-val{font-size:26px;font-weight:700;color:var(--gray-900)}
+.kpi-lbl{font-size:11px;color:var(--gray-500);margin-top:3px}
+.kpi-trend{
+  font-size:10px;font-weight:600;margin-top:5px;
+  display:flex;align-items:center;gap:3px;
+}
+.kpi-up{color:var(--green)}
+.kpi-down{color:var(--red)}
+
+.admin-charts{display:grid;grid-template-columns:3fr 2fr;gap:16px;margin-bottom:20px}
+.chart-card{background:#fff;border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+.chart-title{font-size:13px;font-weight:600;color:var(--gray-800);margin-bottom:14px}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:100px;padding-bottom:4px}
+.bar-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.bar{
+  width:100%;border-radius:4px 4px 0 0;
+  background:linear-gradient(180deg,var(--brand),var(--brand-dark));
+  transition:height .3s;min-height:4px;
+}
+.bar-label{font-size:9px;color:var(--gray-400)}
+
+.pie-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px}
+.donut-svg{overflow:visible}
+.legend{display:flex;flex-direction:column;gap:5px;width:100%}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray-700)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+.admin-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.a-card{background:#fff;border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+.a-card-title{font-size:13px;font-weight:600;color:var(--gray-800);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.a-card-link{font-size:11px;color:var(--brand);text-decoration:none}
+.top-student{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 10px;border-radius:8px;background:var(--gray-50);margin-bottom:6px;
+}
+.rank-badge{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;
+}
+.rank-1{background:#fbbf24;color:#78350f}
+.rank-2{background:#d1d5db;color:#374151}
+.rank-3{background:#fed7aa;color:#9a3412}
+.rank-rest{background:var(--gray-100);color:var(--gray-500)}
+.ts-name{flex:1;font-size:12px;font-weight:500;color:var(--gray-800)}
+.ts-pts{font-size:12px;font-weight:700;color:var(--brand)}
+
+.ann-item{
+  padding:8px 10px;border-radius:8px;background:var(--gray-50);margin-bottom:5px;
+}
+.ann-title{font-size:12px;font-weight:500;color:var(--gray-800)}
+.ann-date{font-size:10px;color:var(--gray-400);margin-top:2px}
+
+/* ── RIGHT PANEL FEATURES ── */
+.features-panel{
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:var(--radius-xl);padding:24px;
+}
+.fp-title{
+  font-size:13px;font-weight:600;color:rgba(255,255,255,.6);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;
+}
+.feature-item{
+  display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;padding-bottom:14px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.feature-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.f-icon{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.f-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:2px}
+.f-desc{font-size:11px;color:rgba(255,255,255,.45);line-height:1.5}
+
+/* ── PROGRESS BARS ── */
+.prog-bar-wrap{margin-bottom:10px}
+.prog-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--gray-500);margin-bottom:5px}
+.prog-track{background:var(--gray-100);border-radius:99px;height:7px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--brand),var(--brand-dark))}
+.prog-fill.blue{background:linear-gradient(90deg,var(--peacock),var(--peacock-dark))}
+.prog-fill.green{background:linear-gradient(90deg,#22c55e,#16a34a)}
+.prog-fill.purple{background:linear-gradient(90deg,#a855f7,#7c3aed)}
+
+/* ── INLINE SVG CHARTS ── */
+.mini-chart{width:100%;height:60px;overflow:visible}
+.line-path{fill:none;stroke:var(--brand);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.area-path{fill:url(#areaGrad);opacity:.3}
+.chart-axis{stroke:var(--gray-200);stroke-width:1}
+
+/* ── SCHEMA SECTION ── */
+.schema-section{
+  margin-top:40px;background:rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-xl);padding:28px;
+}
+.schema-title{
+  font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;display:flex;align-items:center;gap:8px;
+}
+.schema-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.schema-card{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:var(--radius);padding:14px;
+}
+.sc-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sc-icon{
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.sc-name{font-size:13px;font-weight:600;color:#fff}
+.sc-field{
+  font-size:10px;color:rgba(255,255,255,.4);padding:3px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);font-family:monospace;
+  display:flex;justify-content:space-between;
+}
+.sc-field:last-child{border-bottom:none}
+.sc-type{color:rgba(6,182,212,.6)}
+.sc-pk{color:rgba(249,115,22,.7);font-size:9px;font-weight:700;margin-left:4px}
+
+/* ── TECH STACK ── */
+.tech-section{
+  margin-top:24px;
+  display:grid;grid-template-columns:repeat(5,1fr);gap:12px;
+}
+.tech-chip{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:var(--radius);padding:10px 12px;text-align:center;
+}
+.tech-icon{font-size:24px;margin-bottom:6px}
+.tech-name{font-size:11px;font-weight:600;color:#fff}
+.tech-role{font-size:9px;color:rgba(255,255,255,.35);margin-top:2px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .split{grid-template-columns:1fr}
+  .stat-cards,.admin-kpi-grid{grid-template-columns:1fr 1fr}
+  .admin-charts{grid-template-columns:1fr}
+  .schema-grid{grid-template-columns:1fr 1fr}
+  .tech-section{grid-template-columns:repeat(3,1fr)}
+  .teacher-sidebar{display:none}
+}
+
+/* ── TABS WITHIN PORTAL ── */
+.sub-tabs{display:flex;gap:6px;margin-bottom:16px}
+.sub-tab{
+  padding:5px 12px;border-radius:7px;border:1px solid var(--gray-200);
+  font-size:12px;cursor:pointer;font-family:inherit;background:#fff;
+  color:var(--gray-500);transition:all .15s;
+}
+.sub-tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+/* PILL */
+.pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;
+}
+.pill-green{background:#dcfce7;color:#16a34a}
+.pill-orange{background:#ffedd5;color:#ea580c}
+.pill-blue{background:#dbeafe;color:#2563eb}
+.pill-red{background:#fee2e2;color:#dc2626}
+
+/* header section label */
+.h-label{
+  color:rgba(255,255,255,.4);font-size:12px;text-transform:uppercase;
+  letter-spacing:.06em;font-weight:600;margin-bottom:8px;
+}
+
+.divider{border:none;border-top:1px solid rgba(255,255,255,.06);margin:32px 0}
+
+/* scroll for device */
+.device-scroll{max-height:750px;overflow-y:auto;scrollbar-width:none}
+.device-scroll::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- PORTAL SWITCHER -->
+<div class="portal-bar">
+  <div class="portal-bar-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">वि</div>
+      <div>
+        <div class="logo-text">विद्यासेतू</div>
+        <span class="logo-sub">VidyaSetu Platform</span>
+      </div>
+    </a>
+    <div class="portal-tabs">
+      <button class="portal-tab active" onclick="showPortal('student',this)">👨‍🎓 Student Portal</button>
+      <button class="portal-tab teacher" onclick="showPortal('teacher',this)">👩‍🏫 Teacher Portal</button>
+      <button class="portal-tab parent" onclick="showPortal('parent',this)">👨‍👩‍👧 Parent Portal</button>
+      <button class="portal-tab admin" onclick="showPortal('admin',this)">🏫 Admin Portal</button>
+      <button class="portal-tab" onclick="showPortal('schema',this)">🗄️ Database</button>
+    </div>
+    <div class="preview-badge">🔥 Live Preview</div>
+  </div>
+</div>
+
+<div class="canvas">
+
+<!-- ═══════════════════════════════════════════
+     STUDENT PORTAL
+════════════════════════════════════════════ -->
+<div id="p-student" class="portal-view active">
+  <div style="margin-bottom:20px">
+    <p class="h-label">Student Portal — Mobile App (Android / PWA)</p>
+    <div style="font-size:28px;font-weight:700;color:#fff;margin-bottom:4px">विद्यार्थी पोर्टल</div>
+    <p style="color:rgba(255,255,255,.45);font-size:14px">Marathi-first • Offline-ready • AI-powered • Class 1–12</p>
+  </div>
+  <div class="split">
+    <!-- Mobile device -->
+    <div>
+      <div class="device-frame" style="position:relative">
+        <div class="device-notch"></div>
+        <div class="device-screen device-scroll" style="position:relative;padding-bottom:70px">
+          <!-- Hero -->
+          <div class="hero-gradient">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div class="greeting-sm">🌅 सुप्रभात!</div>
+                <div class="greeting-name">नमस्कार, रवि 👋</div>
+                <div class="greeting-school">इयत्ता ८ • विद्यामंदिर शाळा, सांगली</div>
+              </div>
+              <div class="att-ring-wrap">
+                <svg width="56" height="56" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="22" stroke="rgba(255,255,255,.25)" stroke-width="5" fill="none"/>
+                  <circle cx="28" cy="28" r="22" stroke="#fff" stroke-width="5" fill="none"
+                    stroke-dasharray="119 138" stroke-linecap="round"
+                    transform="rotate(-90 28 28)"/>
+                  <text x="28" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Noto Sans Devanagari">87%</text>
+                </svg>
+                <div style="font-size:9px;color:rgba(255,255,255,.6)">उपस्थिती</div>
+              </div>
+            </div>
+            <div class="stat-chips">
+              <div class="stat-chip">
+                <div class="stat-val">⭐ 1,250</div>
+                <div class="stat-lbl">पॉइंट्स</div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-val">🔥 12</div>
+                <div class="stat-lbl">दिवस</div>
+              </div>
+              <div class="stat-chip">
+                <div class="stat-val">स्तर ५</div>
+                <div class="stat-lbl">अभ्यासक</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mood Check-in -->
+          <div style="padding:14px 14px 0">
+            <div class="mood-card">
+              <div class="mood-q">आज तुम्हाला कसे वाटत आहे?</div>
+              <div class="moods">
+                <button class="mood-btn sel"><span class="mood-emoji">😄</span><span class="mood-lbl">खूप आनंदी</span></button>
+                <button class="mood-btn"><span class="mood-emoji">😊</span><span class="mood-lbl">आनंदी</span></button>
+                <button class="mood-btn"><span class="mood-emoji">😐</span><span class="mood-lbl">ठीक</span></button>
+                <button class="mood-btn"><span class="mood-emoji">😢</span><span class="mood-lbl">दुःखी</span></button>
+                <button class="mood-btn"><span class="mood-emoji">😰</span><span class="mood-lbl">काळजीत</span></button>
+                <button class="mood-btn"><span class="mood-emoji">😴</span><span class="mood-lbl">थकलेलो</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Streak -->
+          <div style="padding:12px 14px 0">
+            <div class="streak-banner">
+              <div class="streak-fire">🔥</div>
+              <div>
+                <div class="streak-title">12 दिवस सलग!</div>
+                <div class="streak-sub">आज पण शिकाल तर 13 दिवस!</div>
+                <div class="streak-dots">
+                  <div class="s-dot done">✓</div><div class="s-dot done">✓</div>
+                  <div class="s-dot done">✓</div><div class="s-dot done">✓</div>
+                  <div class="s-dot today">✓</div><div class="s-dot empty"></div>
+                  <div class="s-dot empty"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subjects -->
+          <div class="section-pad">
+            <div class="section-title">📚 विषय</div>
+          </div>
+          <div class="subj-grid">
+            <div class="subj-card"><div class="subj-icon-wrap" style="background:#fff7ed">📖</div><div class="subj-name" style="color:#ea580c">मराठी</div></div>
+            <div class="subj-card"><div class="subj-icon-wrap" style="background:#eff6ff">🔤</div><div class="subj-name" style="color:#2563eb">English</div></div>
+            <div class="subj-card"><div class="subj-icon-wrap" style="background:#f0fdf4">🔢</div><div class="subj-name" style="color:#16a34a">गणित</div></div>
+            <div class="subj-card"><div class="subj-icon-wrap" style="background:#ecfeff">🔬</div><div class="subj-name" style="color:#0891b2">विज्ञान</div></div>
+            <div class="subj-card"><div class="subj-icon-wrap" style="background:#fffbeb">🏛️</div><div class="subj-name" style="color:#d97706">इतिहास</div></div>
+            <div class="subj-card"><div class="subj-icon-wrap" style="background:#fdf4ff">🗺️</div><div class="subj-name" style="color:#9333ea">भूगोल</div></div>
+          </div>
+
+          <!-- Recent lessons -->
+          <div class="section-pad">
+            <div class="section-title">⏱️ शिकणे सुरू ठेवा</div>
+            <div style="display:flex;flex-direction:column;gap:7px;padding-bottom:4px">
+              <div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:10px;box-shadow:var(--shadow)">
+                <div style="width:36px;height:36px;border-radius:8px;background:#fff7ed;display:flex;align-items:center;justify-content:center;font-size:18px">📖</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:11px;font-weight:600;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">भिन्न संख्या — प्रकरण ४</div>
+                  <div style="font-size:10px;color:var(--gray-400);margin-top:1px">गणित • ७५% पूर्ण</div>
+                  <div style="margin-top:5px;background:var(--gray-100);border-radius:99px;height:4px"><div style="height:4px;width:75%;background:var(--brand);border-radius:99px"></div></div>
+                </div>
+                <div style="color:var(--gray-400);font-size:14px">→</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:10px;box-shadow:var(--shadow)">
+                <div style="width:36px;height:36px;border-radius:8px;background:#ecfeff;display:flex;align-items:center;justify-content:center;font-size:18px">🔬</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:11px;font-weight:600;color:var(--gray-800)">पेशी रचना — प्रकरण २</div>
+                  <div style="font-size:10px;color:var(--gray-400);margin-top:1px">विज्ञान • ४०% पूर्ण</div>
+                  <div style="margin-top:5px;background:var(--gray-100);border-radius:99px;height:4px"><div style="height:4px;width:40%;background:var(--peacock);border-radius:99px"></div></div>
+                </div>
+                <div style="color:var(--gray-400);font-size:14px">→</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Badges -->
+          <div class="section-pad">
+            <div class="section-title">🏆 माझे बॅज</div>
+            <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+                <div style="width:48px;height:48px;border-radius:50%;background:#fff9c4;border:2px solid #fbbf24;display:flex;align-items:center;justify-content:center;font-size:22px">🔥</div>
+                <div style="font-size:9px;color:var(--gray-500);text-align:center;max-width:48px">7 दिवस</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+                <div style="width:48px;height:48px;border-radius:50%;background:#dbeafe;border:2px solid #3b82f6;display:flex;align-items:center;justify-content:center;font-size:22px">📚</div>
+                <div style="font-size:9px;color:var(--gray-500);text-align:center;max-width:48px">50 धडे</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+                <div style="width:48px;height:48px;border-radius:50%;background:#dcfce7;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:22px">🎯</div>
+                <div style="font-size:9px;color:var(--gray-500);text-align:center;max-width:48px">100% परीक्षा</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+                <div style="width:48px;height:48px;border-radius:50%;background:#f3e8ff;border:2px dashed #a855f7;display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.5">🔒</div>
+                <div style="font-size:9px;color:var(--gray-400);text-align:center;max-width:48px">लवकरच</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI FAB -->
+        <button class="ai-fab" onclick="toggleAIChat()">🤖 AI शिक्षक</button>
+
+        <!-- AI Chat overlay -->
+        <div id="ai-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:30;border-radius:inherit" onclick="toggleAIChat()"></div>
+        <div id="ai-panel" style="display:none;position:absolute;bottom:70px;left:12px;right:12px;z-index:40;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg)">
+          <div class="ai-chat-header">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="ai-avatar">🤖</div>
+              <div><div class="ai-name">AI शिक्षक</div><div class="ai-subtitle">इयत्ता ८ • मराठी</div></div>
+            </div>
+            <button onclick="toggleAIChat()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;color:#fff;font-size:14px">✕</button>
+          </div>
+          <div class="chat-msgs">
+            <div class="chat-bubble bot">नमस्कार! मी तुमचा AI शिक्षक आहे. इयत्ता ८ च्या कोणत्याही विषयाबद्दल प्रश्न विचारा! 😊</div>
+            <div class="chat-bubble user">भिन्न संख्या म्हणजे काय?</div>
+            <div class="chat-bubble bot">भिन्न संख्या म्हणजे अशा संख्या ज्यांचा हर (denominator) १ नसतो. उदाहरण: ३/४, ५/७, २/३ या भिन्न संख्या आहेत! 📊<br><br>शेतातील उदाहरण: जर तुमच्या बाबांनी ३ मधल्या २ भाग जमीन विकली, तर ते २/३ भाग विकले.</div>
+          </div>
+          <div class="chat-input-wrap">
+            <input class="chat-input" placeholder="प्रश्न विचारा..." value=""/>
+            <button class="chat-send">➤</button>
+          </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="nav-icon">🏠</div><div class="nav-lbl">मुखपृष्ठ</div></div>
+          <div class="nav-item"><div class="nav-icon">📚</div><div class="nav-lbl">शिका</div></div>
+          <div class="nav-item"><div class="nav-icon">🎯</div><div class="nav-lbl">करिअर</div></div>
+          <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-lbl">समाज</div></div>
+          <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-lbl">प्रोफाइल</div></div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:12px">
+        <span style="font-size:11px;color:rgba(255,255,255,.3)">↕ Scroll inside device to see more</span>
+      </div>
+    </div>
+
+    <!-- Right: Features + AI Chat panel -->
+    <div class="stack">
+      <div class="features-panel">
+        <div class="fp-title">Student Portal Highlights</div>
+        <div class="feature-item">
+          <div class="f-icon" style="background:rgba(249,115,22,.15)">🤖</div>
+          <div><div class="f-title">Marathi AI Tutor (LangGraph)</div><div class="f-desc">RAG-powered tutor answers in Marathi with local examples. Lesson context retrieved from Qdrant vector DB.</div></div>
+        </div>
+        <div class="feature-item">
+          <div class="f-icon" style="background:rgba(249,115,22,.15)">🔥</div>
+          <div><div class="f-title">Wari Learning Journey</div><div class="f-desc">Gamified streak system with daily points, levels in Marathi (नवशिक्या → विद्यासेतू तारा), and badge system.</div></div>
+        </div>
+        <div class="feature-item">
+          <div class="f-icon" style="background:rgba(6,182,212,.15)">📡</div>
+          <div><div class="f-title">Offline-First Architecture</div><div class="f-desc">Hive local DB + WorkManager sync. Progress queued offline, pushed to server when connected.</div></div>
+        </div>
+        <div class="feature-item">
+          <div class="f-icon" style="background:rgba(34,197,94,.15)">💚</div>
+          <div><div class="f-title">Wellbeing Check-in</div><div class="f-desc">Daily mood tracking. 3+ consecutive bad moods triggers teacher alert via Redis queue.</div></div>
+        </div>
+        <div class="feature-item">
+          <div class="f-icon" style="background:rgba(168,85,247,.15)">🎓</div>
+          <div><div class="f-title">Digital Skill Passport</div><div class="f-desc">Verifiable record of lessons, badges, projects & certificates across career stage.</div></div>
+        </div>
+      </div>
+
+      <!-- AI Chat full demo -->
+      <div>
+        <div class="fp-title" style="margin-bottom:10px">AI Tutor — Marathi Conversation Demo</div>
+        <div class="ai-chat-panel">
+          <div class="ai-chat-header" style="padding:14px 18px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="ai-avatar" style="width:42px;height:42px;font-size:22px">🤖</div>
+              <div><div class="ai-name" style="font-size:15px">AI मराठी शिक्षक</div><div class="ai-subtitle">LangGraph + RAG + GPT-4o-mini</div></div>
+            </div>
+            <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:10px;color:#fff">● Online</span>
+          </div>
+          <div class="chat-msgs" style="padding:16px;gap:12px">
+            <div class="chat-bubble bot" style="font-size:13px">नमस्कार! मी विद्यासेतूचा AI शिक्षक आहे. इयत्ता ८ च्या कोणत्याही प्रश्नाचे उत्तर मराठीत देईन! 😊</div>
+            <div class="chat-bubble user" style="font-size:13px">प्रकाशसंश्लेषण म्हणजे काय?</div>
+            <div class="chat-bubble bot" style="font-size:13px">प्रकाशसंश्लेषण म्हणजे वनस्पती सूर्यप्रकाश वापरून अन्न तयार करते ती प्रक्रिया! 🌿<br><br><b>सूत्र:</b> CO₂ + H₂O + सूर्यप्रकाश → C₆H₁₂O₆ + O₂<br><br>गावातले उदाहरण: तुमच्या शेतातील भाजीपाला रोज सूर्यप्रकाशात अन्न बनवतो, म्हणून झाडे हिरवी राहतात! 🌾</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span style="background:var(--brand-light);color:var(--brand-dark);padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer">क्लोरोफिल म्हणजे काय?</span>
+              <span style="background:var(--brand-light);color:var(--brand-dark);padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer">प्रकाश नसेल तर?</span>
+            </div>
+          </div>
+          <div class="chat-input-wrap">
+            <input class="chat-input" style="font-size:13px" placeholder="मराठीत प्रश्न विचारा..."/>
+            <button class="chat-send">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TEACHER PORTAL
+════════════════════════════════════════════ -->
+<div id="p-teacher" class="portal-view">
+  <div style="margin-bottom:20px">
+    <p class="h-label">Teacher Portal — Web Application</p>
+    <div style="font-size:28px;font-weight:700;color:#fff;margin-bottom:4px">शिक्षक पोर्टल</div>
+    <p style="color:rgba(255,255,255,.45);font-size:14px">Attendance • AI Lesson Plans • Analytics • Parent Communication</p>
+  </div>
+  <div class="web-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#ffbd2e"></div>
+        <div class="browser-dot" style="background:#28ca41"></div>
+      </div>
+      <div class="browser-url">teacher.vidyasetu.in/dashboard</div>
+      <span style="color:rgba(255,255,255,.3);font-size:11px">🔒 Secure</span>
+    </div>
+    <div style="display:flex">
+      <!-- Sidebar -->
+      <div class="teacher-sidebar">
+        <div class="t-sidebar-header">
+          <div class="t-logo"><div class="t-logo-icon">वि</div><div class="t-logo-text">विद्यासेतू</div></div>
+          <div class="teacher-info">
+            <div class="teacher-avatar">स</div>
+            <div><div class="teacher-name">सुनीता पाटील मॅडम</div><div class="teacher-school">विद्यामंदिर, सांगली</div></div>
+          </div>
+        </div>
+        <nav class="t-nav">
+          <div class="t-nav-item active"><span class="t-nav-icon">🏠</span>डॅशबोर्ड</div>
+          <div class="t-nav-item"><span class="t-nav-icon">✅</span>हजेरी<span class="t-nav-badge">!</span></div>
+          <div class="t-nav-item"><span class="t-nav-icon">👨‍🎓</span>विद्यार्थी</div>
+          <div class="t-nav-item"><span class="t-nav-icon">📝</span>परीक्षा</div>
+          <div class="t-nav-item"><span class="t-nav-icon">📚</span>गृहपाठ</div>
+          <div class="t-nav-item"><span class="t-nav-icon">📋</span>धडा योजना</div>
+          <div class="t-nav-item"><span class="t-nav-icon">📊</span>विश्लेषण</div>
+          <div class="t-nav-item"><span class="t-nav-icon">💬</span>संदेश</div>
+          <div style="border-top:1px solid rgba(255,255,255,.06);margin:10px 0"></div>
+          <div style="padding:10px 12px">
+            <div style="background:linear-gradient(135deg,rgba(249,115,22,.2),rgba(234,88,12,.2));border:1px solid rgba(249,115,22,.3);border-radius:10px;padding:10px">
+              <div style="font-size:11px;font-weight:600;color:var(--brand);margin-bottom:6px">🤖 AI सहाय्यक</div>
+              <div class="ai-tools-grid">
+                <button class="ai-tool-btn" style="font-size:10px">📋 धडा योजना</button>
+                <button class="ai-tool-btn" style="font-size:10px">❓ प्रश्ने</button>
+                <button class="ai-tool-btn" style="font-size:10px">🎨 उपक्रम</button>
+                <button class="ai-tool-btn" style="font-size:10px">🔧 उपचार</button>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </div>
+
+      <!-- Main area -->
+      <div class="teacher-main">
+        <div class="t-page-title">नमस्कार, सुनीता मॅडम 🙏</div>
+        <div class="t-page-sub">विद्यामंदिर शाळा, सांगली • आज: मंगळवार, ११ जून २०२४</div>
+
+        <!-- KPIs -->
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:#eff6ff">👨‍🎓</div>
+            <div class="stat-card-val">142</div>
+            <div class="stat-card-lbl">एकूण विद्यार्थी</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:#dcfce7">✅</div>
+            <div class="stat-card-val" style="color:var(--green)">89%</div>
+            <div class="stat-card-lbl">सरासरी उपस्थिती</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:#fff7ed">📖</div>
+            <div class="stat-card-val">1,840</div>
+            <div class="stat-card-lbl">पूर्ण झालेले धडे</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:#fdf4ff">📊</div>
+            <div class="stat-card-val">73%</div>
+            <div class="stat-card-lbl">सरासरी गुण</div>
+          </div>
+        </div>
+
+        <div class="t-grid">
+          <!-- Attendance today -->
+          <div class="t-card">
+            <div class="t-card-title">✅ आजची हजेरी — इयत्ता ८-अ</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <div style="flex:1;text-align:center;background:#dcfce7;border-radius:8px;padding:6px"><div style="font-size:18px;font-weight:700;color:var(--green)">36</div><div style="font-size:10px;color:var(--green)">उपस्थित</div></div>
+              <div style="flex:1;text-align:center;background:#fee2e2;border-radius:8px;padding:6px"><div style="font-size:18px;font-weight:700;color:var(--red)">4</div><div style="font-size:10px;color:var(--red)">अनुपस्थित</div></div>
+              <div style="flex:1;text-align:center;background:#fef9c3;border-radius:8px;padding:6px"><div style="font-size:18px;font-weight:700;color:#ca8a04">2</div><div style="font-size:10px;color:#ca8a04">उशिरा</div></div>
+            </div>
+            <table class="att-table">
+              <thead><tr><th>विद्यार्थी</th><th>स्थिती</th></tr></thead>
+              <tbody>
+                <tr><td>रवि पाटील</td><td><span class="att-badge att-present">उपस्थित</span></td></tr>
+                <tr><td>प्रिया जाधव</td><td><span class="att-badge att-absent">अनुपस्थित</span></td></tr>
+                <tr><td>सचिन शिंदे</td><td><span class="att-badge att-late">उशिरा</span></td></tr>
+                <tr><td>अनिता देशमुख</td><td><span class="att-badge att-present">उपस्थित</span></td></tr>
+              </tbody>
+            </table>
+            <button style="margin-top:10px;width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✅ हजेरी नोंदवा</button>
+          </div>
+
+          <!-- Class list -->
+          <div class="t-card">
+            <div class="t-card-title">📋 माझे वर्ग</div>
+            <div class="class-list">
+              <div class="class-row"><div><div class="class-row-name">इयत्ता ७-अ</div><div class="class-row-count">42 विद्यार्थी</div></div><button class="tag-btn tag-green">हजेरी</button></div>
+              <div class="class-row"><div><div class="class-row-name">इयत्ता ८-अ</div><div class="class-row-count">38 विद्यार्थी</div></div><button class="tag-btn tag-green">हजेरी</button></div>
+              <div class="class-row"><div><div class="class-row-name">इयत्ता ८-ब</div><div class="class-row-count">40 विद्यार्थी</div></div><button class="tag-btn tag-green">हजेरी</button></div>
+              <div class="class-row"><div><div class="class-row-name">इयत्ता ९-अ</div><div class="class-row-count">35 विद्यार्थी</div></div><button class="tag-btn tag-green">हजेरी</button></div>
+            </div>
+          </div>
+
+          <!-- Student Progress Heatmap -->
+          <div class="t-card">
+            <div class="t-card-title">📊 विद्यार्थी प्रगती (इयत्ता ८-अ)</div>
+            <div class="prog-bar-wrap"><div class="prog-meta"><span>गणित</span><span>78%</span></div><div class="prog-track"><div class="prog-fill" style="width:78%"></div></div></div>
+            <div class="prog-bar-wrap"><div class="prog-meta"><span>विज्ञान</span><span>65%</span></div><div class="prog-track"><div class="prog-fill blue" style="width:65%"></div></div></div>
+            <div class="prog-bar-wrap"><div class="prog-meta"><span>मराठी</span><span>88%</span></div><div class="prog-track"><div class="prog-fill green" style="width:88%"></div></div></div>
+            <div class="prog-bar-wrap"><div class="prog-meta"><span>English</span><span>55%</span></div><div class="prog-track"><div class="prog-fill purple" style="width:55%"></div></div></div>
+            <div style="margin-top:10px;background:#fff3cd;border-radius:8px;padding:8px;font-size:11px;color:#856404">⚠️ ५ विद्यार्थ्यांना English मध्ये मदत हवी आहे</div>
+          </div>
+
+          <!-- AI Generated Quiz preview -->
+          <div class="t-card">
+            <div class="t-card-title">🤖 AI Quiz — गणित (इयत्ता ८)</div>
+            <div style="background:var(--gray-50);border-radius:8px;padding:10px;font-size:12px">
+              <div style="font-weight:600;color:var(--gray-800);margin-bottom:8px">प्र. १. खालीलपैकी कोणती भिन्न संख्या आहे?</div>
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <div style="display:flex;align-items:center;gap:6px"><div style="width:18px;height:18px;border-radius:4px;border:1.5px solid var(--gray-300);flex-shrink:0"></div><span>अ) ७/१</span></div>
+                <div style="display:flex;align-items:center;gap:6px"><div style="width:18px;height:18px;border-radius:4px;background:var(--green);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px">✓</div><span style="color:var(--green);font-weight:600">ब) ३/४ ✅</span></div>
+                <div style="display:flex;align-items:center;gap:6px"><div style="width:18px;height:18px;border-radius:4px;border:1.5px solid var(--gray-300);flex-shrink:0"></div><span>क) ८/१</span></div>
+                <div style="display:flex;align-items:center;gap:6px"><div style="width:18px;height:18px;border-radius:4px;border:1.5px solid var(--gray-300);flex-shrink:0"></div><span>ड) ०/५</span></div>
+              </div>
+            </div>
+            <button style="margin-top:10px;width:100%;background:var(--peacock);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">🤖 आणखी प्रश्न निर्माण करा</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PARENT PORTAL
+════════════════════════════════════════════ -->
+<div id="p-parent" class="portal-view">
+  <div style="margin-bottom:20px">
+    <p class="h-label">Parent Portal — Aai-Baba Mode (Mobile)</p>
+    <div style="font-size:28px;font-weight:700;color:#fff;margin-bottom:4px">आई-बाबा पोर्टल</div>
+    <p style="color:rgba(255,255,255,.45);font-size:14px">Weekly Marathi reports • Attendance alerts • Mood trends • Teacher connect</p>
+  </div>
+  <div class="split">
+    <div>
+      <div class="device-frame" style="position:relative">
+        <div class="device-notch"></div>
+        <div class="device-screen device-scroll">
+          <!-- Parent hero -->
+          <div class="parent-hero">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div class="greeting-sm">नमस्कार,</div>
+                <div class="greeting-name">शांताबाई पाटील 🙏</div>
+                <div class="greeting-school">रवि पाटील यांचे पालक</div>
+              </div>
+              <button style="background:rgba(255,255,255,.2);border:none;border-radius:10px;padding:8px;cursor:pointer;position:relative">
+                🔔
+                <div style="position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--red);border-radius:50%;border:1.5px solid var(--peacock-dark)"></div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Child card -->
+          <div style="padding:0 14px">
+            <div class="child-card-outer">
+              <div class="child-card-header">
+                <div class="child-avatar">र</div>
+                <div>
+                  <div class="child-name">रवि प्रकाश पाटील</div>
+                  <div class="child-class">इयत्ता ८-अ • विद्यामंदिर शाळा, सांगली</div>
+                  <div class="child-tags">
+                    <span class="child-tag">स्तर ५</span>
+                    <span class="child-tag">🔥 १२ दिवस</span>
+                  </div>
+                </div>
+              </div>
+              <div class="parent-stats">
+                <div class="p-stat"><div class="p-stat-val" style="color:var(--green)">87%</div><div class="p-stat-lbl">उपस्थिती</div></div>
+                <div class="p-stat"><div class="p-stat-val">1,250</div><div class="p-stat-lbl">पॉइंट्स</div></div>
+                <div class="p-stat"><div class="p-stat-val" style="color:var(--green)">73%</div><div class="p-stat-lbl">सरासरी गुण</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-section">
+            <!-- Attendance card -->
+            <div class="p-card">
+              <div class="p-card-title">📅 उपस्थिती (जून २०२४)</div>
+              <div style="display:flex;align-items:center;gap:16px">
+                <svg width="70" height="70" viewBox="0 0 70 70">
+                  <circle cx="35" cy="35" r="27" stroke="#e5e7eb" stroke-width="7" fill="none"/>
+                  <circle cx="35" cy="35" r="27" stroke="#22c55e" stroke-width="7" fill="none"
+                    stroke-dasharray="148 170" stroke-linecap="round"
+                    transform="rotate(-90 35 35)"/>
+                  <text x="35" y="39" text-anchor="middle" fill="var(--gray-900)" font-size="13" font-weight="700" font-family="Noto Sans Devanagari">87%</text>
+                </svg>
+                <div style="flex:1">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                    <div style="background:var(--green-light);border-radius:8px;padding:6px;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--green)">43</div><div style="font-size:9px;color:var(--green)">उपस्थित</div></div>
+                    <div style="background:#fee2e2;border-radius:8px;padding:6px;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--red)">7</div><div style="font-size:9px;color:var(--red)">अनुपस्थित</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent exams -->
+            <div class="p-card">
+              <div class="p-card-title">📝 अलीकडील परीक्षा</div>
+              <div class="score-row"><div class="score-sub">गणित — परीक्षा १</div><div class="score-val score-pass">85% ✅</div></div>
+              <div class="score-row"><div class="score-sub">विज्ञान — घटक चाचणी</div><div class="score-val score-pass">78% ✅</div></div>
+              <div class="score-row"><div class="score-sub">English — टर्म परीक्षा</div><div class="score-val score-fail">48% ❌</div></div>
+              <div style="background:#fff3cd;border-radius:8px;padding:8px;font-size:11px;color:#856404;margin-top:6px">💡 English मध्ये अधिक सराव करणे आवश्यक आहे</div>
+            </div>
+
+            <!-- Mood history -->
+            <div class="p-card">
+              <div class="p-card-title">💚 रवि यांची भावनिक स्थिती (अलीकडील ७ दिवस)</div>
+              <div class="mood-history">
+                <div class="mh-item"><span class="mh-emoji">😄</span><span class="mh-date">सोम</span></div>
+                <div class="mh-item"><span class="mh-emoji">😊</span><span class="mh-date">मंगळ</span></div>
+                <div class="mh-item"><span class="mh-emoji">😐</span><span class="mh-date">बुध</span></div>
+                <div class="mh-item"><span class="mh-emoji">😊</span><span class="mh-date">गुरु</span></div>
+                <div class="mh-item"><span class="mh-emoji">😄</span><span class="mh-date">शुक्र</span></div>
+                <div class="mh-item"><span class="mh-emoji">😴</span><span class="mh-date">शनि</span></div>
+                <div class="mh-item"><span class="mh-emoji">😊</span><span class="mh-date">रवि</span></div>
+              </div>
+            </div>
+
+            <!-- Badges strip -->
+            <div class="p-card">
+              <div class="p-card-title">🏆 रवि यांनी मिळवलेले बॅज</div>
+              <div style="display:flex;gap:10px">
+                <div style="text-align:center"><div style="font-size:28px">🔥</div><div style="font-size:9px;color:var(--gray-500)">७ दिवस</div></div>
+                <div style="text-align:center"><div style="font-size:28px">📚</div><div style="font-size:9px;color:var(--gray-500)">५० धडे</div></div>
+                <div style="text-align:center"><div style="font-size:28px">⭐</div><div style="font-size:9px;color:var(--gray-500)">१००० pts</div></div>
+                <div style="text-align:center"><div style="font-size:28px">🎯</div><div style="font-size:9px;color:var(--gray-500)">Perfect</div></div>
+              </div>
+            </div>
+
+            <!-- Scholarship alert -->
+            <div style="background:linear-gradient(135deg,var(--peacock-light),var(--peacock-light));border:1px solid rgba(6,182,212,.2);border-radius:var(--radius-lg);padding:12px;margin-bottom:12px">
+              <div style="font-size:12px;font-weight:600;color:var(--peacock-dark)">🎓 नवीन शिष्यवृत्ती उपलब्ध!</div>
+              <div style="font-size:11px;color:var(--gray-600);margin-top:4px">Swami Vivekananda Scholarship — OBC विद्यार्थ्यांसाठी</div>
+              <div style="font-size:11px;font-weight:600;color:var(--peacock-dark);margin-top:2px">अंतिम तारीख: ३० जून २०२४</div>
+            </div>
+
+            <button class="p-contact-btn" style="margin-bottom:16px">💬 सुनीता मॅडम यांना संदेश पाठवा</button>
+          </div>
+        </div>
+        <!-- Bottom nav -->
+        <div class="bottom-nav">
+          <div class="nav-item active"><div class="nav-icon">🏠</div><div class="nav-lbl">मुखपृष्ठ</div></div>
+          <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-lbl">प्रगती</div></div>
+          <div class="nav-item"><div class="nav-icon">💬</div><div class="nav-lbl">संदेश</div></div>
+          <div class="nav-item"><div class="nav-icon">🔔</div><div class="nav-lbl">सूचना</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="features-panel">
+        <div class="fp-title">Parent Portal Highlights</div>
+        <div class="feature-item">
+          <div class="f-icon" style="background:rgba(6,182,212,.15)">🗣️</div>
+          <div><div class="f-title">Aai-Baba Voice Mode</div><div class="f-desc">Weekly automated voice call to parents summarizing child's week in simple Marathi — accessible for non-literate parents.</div></div>
+        </div>
+        <div class="feature-item">
+          <div class="f-icon" style="background:rgba(34,197,94,.15)">📱</div>
+          <div><div class="f-title">SMS Alerts (absent + exam)</div><div class="f-desc">Instant SMS to parent's feature phone when child is absent. No smartphone required for basic alerts.</div></div>
+        </div>
+        <div class="feature-item">
+          <div class="f-icon" style="background:rgba(249,115,22,.15)">🎓</div>
+          <div><div class="f-title">Scholarship Notifications</div><div class="f-desc">Auto-matched scholarships based on child's grade, caste category, income — sent proactively before deadlines.</div></div>
+        </div>
+        <div class="feature-item">
+          <div class="f-icon" style="background:rgba(168,85,247,.15)">💚</div>
+          <div><div class="f-title">Child Wellbeing Insights</div><div class="f-desc">7-day mood trend shown to parents. Sustained negative moods flag a parent + teacher alert automatically.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ADMIN PORTAL
+════════════════════════════════════════════ -->
+<div id="p-admin" class="portal-view">
+  <div style="margin-bottom:20px">
+    <p class="h-label">School Admin Portal — Web Dashboard</p>
+    <div style="font-size:28px;font-weight:700;color:#fff;margin-bottom:4px">शाळा प्रशासन पोर्टल</div>
+    <p style="color:rgba(255,255,255,.45);font-size:14px">Analytics • UDISE Reports • Student Management • Announcements</p>
+  </div>
+  <div class="web-frame">
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#ffbd2e"></div>
+        <div class="browser-dot" style="background:#28ca41"></div>
+      </div>
+      <div class="browser-url">admin.vidyasetu.in/dashboard</div>
+      <span style="color:rgba(255,255,255,.3);font-size:11px">🔒 Secure</span>
+    </div>
+
+    <div style="background:#fff">
+      <!-- Top bar -->
+      <div class="admin-topbar">
+        <div>
+          <div class="admin-school-name">विद्यामंदिर प्रशाला, सांगली</div>
+          <div class="admin-udise">UDISE: 27230201101 • जिल्हा: सांगली</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="pill pill-green">● Live</span>
+          <button style="background:var(--brand);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">📥 अहवाल डाउनलोड</button>
+        </div>
+      </div>
+
+      <div class="admin-body">
+        <!-- KPIs -->
+        <div class="admin-kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background:#eff6ff">👨‍🎓</div>
+            <div class="kpi-val">1,284</div>
+            <div class="kpi-lbl">एकूण विद्यार्थी</div>
+            <div class="kpi-trend kpi-up">↑ 12% मागील वर्षापेक्षा</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background:#dcfce7">✅</div>
+            <div class="kpi-val" style="color:var(--green)">89%</div>
+            <div class="kpi-lbl">आजची उपस्थिती</div>
+            <div class="kpi-trend kpi-up">↑ राज्य सरासरीपेक्षा चांगले</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background:#fff7ed">📚</div>
+            <div class="kpi-val">4,823</div>
+            <div class="kpi-lbl">आजचे एकूण धडे</div>
+            <div class="kpi-trend kpi-up">↑ सर्वोत्तम आठवडा</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background:#fdf4ff">⚡</div>
+            <div class="kpi-val">847</div>
+            <div class="kpi-lbl">सक्रिय विद्यार्थी (७ दिवस)</div>
+            <div class="kpi-trend kpi-down">↓ ३ जण जोखमीत आहेत</div>
+          </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="admin-charts">
+          <!-- Attendance trend line chart -->
+          <div class="chart-card">
+            <div class="chart-title">📈 उपस्थिती ट्रेंड — गेल्या १४ दिवस</div>
+            <svg class="mini-chart" viewBox="0 0 400 80" style="height:80px;width:100%">
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f97316" stop-opacity=".4"/>
+                  <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="70" x2="400" y2="70" stroke="#e5e7eb" stroke-width="1"/>
+              <path class="area-path" d="M0,40 L28,35 L56,38 L84,30 L112,25 L140,28 L168,20 L196,22 L224,18 L252,15 L280,12 L308,14 L336,10 L400,8 L400,70 L0,70 Z"/>
+              <path class="line-path" d="M0,40 L28,35 L56,38 L84,30 L112,25 L140,28 L168,20 L196,22 L224,18 L252,15 L280,12 L308,14 L336,10 L400,8"/>
+              <circle cx="400" cy="8" r="4" fill="var(--brand)"/>
+              <text x="390" y="6" text-anchor="end" font-size="9" fill="var(--brand)" font-weight="600">95%</text>
+              <text x="0" y="42" font-size="8" fill="var(--gray-400)">१ जून</text>
+              <text x="370" y="78" font-size="8" fill="var(--gray-400)">आज</text>
+            </svg>
+          </div>
+
+          <!-- Grade distribution donut -->
+          <div class="chart-card">
+            <div class="chart-title">📊 इयत्तानिहाय विद्यार्थी</div>
+            <div class="bar-chart">
+              <div class="bar-item"><div class="bar" style="height:45px"></div><div class="bar-label">१-२</div></div>
+              <div class="bar-item"><div class="bar" style="height:60px"></div><div class="bar-label">३-४</div></div>
+              <div class="bar-item"><div class="bar" style="height:75px"></div><div class="bar-label">५-६</div></div>
+              <div class="bar-item"><div class="bar" style="height:90px"></div><div class="bar-label">७-८</div></div>
+              <div class="bar-item"><div class="bar" style="height:70px"></div><div class="bar-label">९-१०</div></div>
+              <div class="bar-item"><div class="bar" style="height:50px"></div><div class="bar-label">११-१२</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom row -->
+        <div class="admin-bottom">
+          <!-- Top students -->
+          <div class="a-card">
+            <div class="a-card-title">🏆 शीर्ष विद्यार्थी <a class="a-card-link" href="#">सर्व पहा →</a></div>
+            <div class="top-student"><div class="rank-badge rank-1">१</div><div class="ts-name">रवि पाटील — इ. ८</div><div class="ts-pts">1,250 pts</div></div>
+            <div class="top-student"><div class="rank-badge rank-2">२</div><div class="ts-name">प्रिया जाधव — इ. १०</div><div class="ts-pts">1,180 pts</div></div>
+            <div class="top-student"><div class="rank-badge rank-3">३</div><div class="ts-name">सचिन शिंदे — इ. ९</div><div class="ts-pts">1,120 pts</div></div>
+            <div class="top-student"><div class="rank-badge rank-rest">४</div><div class="ts-name">अनिता देशमुख — इ. ७</div><div class="ts-pts">980 pts</div></div>
+            <div class="top-student"><div class="rank-badge rank-rest">५</div><div class="ts-name">विकास माने — इ. ११</div><div class="ts-pts">950 pts</div></div>
+          </div>
+
+          <!-- Announcements -->
+          <div class="a-card">
+            <div class="a-card-title">📢 घोषणा <a class="a-card-link" href="#">+ नवी</a></div>
+            <div class="ann-item"><div class="ann-title">परीक्षा वेळापत्रक — जून २०२४ जाहीर</div><div class="ann-date">आज • सर्व विद्यार्थी + पालक</div></div>
+            <div class="ann-item"><div class="ann-title">पालक-शिक्षक बैठक — शनिवार दुपारी ३ वाजता</div><div class="ann-date">काल • सर्व पालक</div></div>
+            <div class="ann-item"><div class="ann-title">स्वामी विवेकानंद शिष्यवृत्ती — अर्ज मागवणे</div><div class="ann-date">३ दिवसांपूर्वी • इयत्ता ९-१०</div></div>
+            <div class="ann-item"><div class="ann-title">उद्यापासून सायंकाळी अभ्यासिका सुरू</div><div class="ann-date">५ दिवसांपूर्वी • इयत्ता ११-१२</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DATABASE SCHEMA
+════════════════════════════════════════════ -->
+<div id="p-schema" class="portal-view">
+  <div style="margin-bottom:24px">
+    <p class="h-label">Database Architecture</p>
+    <div style="font-size:28px;font-weight:700;color:#fff;margin-bottom:4px">PostgreSQL Schema — 36 Models</div>
+    <p style="color:rgba(255,255,255,.45);font-size:14px">Prisma ORM • DPDP Compliant • UUID PKs • Multilingual columns • Soft deletes</p>
+  </div>
+
+  <div class="schema-grid">
+    <!-- User -->
+    <div class="schema-card">
+      <div class="sc-header"><div class="sc-icon" style="background:rgba(249,115,22,.2)">👤</div><div class="sc-name">User</div></div>
+      <div class="sc-field"><span>id</span><span><span class="sc-type">UUID</span><span class="sc-pk">PK</span></span></div>
+      <div class="sc-field"><span>role</span><span class="sc-type">UserRole</span></div>
+      <div class="sc-field"><span>phone</span><span class="sc-type">String?</span></div>
+      <div class="sc-field"><span>firstName</span><span class="sc-type">String</span></div>
+      <div class="sc-field"><span>firstNameMarathi</span><span class="sc-type">String?</span></div>
+      <div class="sc-field"><span>preferredLanguage</span><span class="sc-type">Language</span></div>
+      <div class="sc-field"><span>isDeleted</span><span class="sc-type">Boolean</span></div>
+    </div>
+    <!-- Student -->
+    <div class="schema-card">
+      <div class="sc-header"><div class="sc-icon" style="background:rgba(6,182,212,.2)">🎓</div><div class="sc-name">Student</div></div>
+      <div class="sc-field"><span>studentId</span><span class="sc-type">String (VS-2024-00001)</span></div>
+      <div class="sc-field"><span>grade</span><span class="sc-type">Int (1-12)</span></div>
+      <div class="sc-field"><span>stage</span><span class="sc-type">FOUNDATION|DISCOVERY|CAREER</span></div>
+      <div class="sc-field"><span>aadhaarHash</span><span class="sc-type">String? (SHA-256)</span></div>
+      <div class="sc-field"><span>castCategory</span><span class="sc-type">String?</span></div>
+      <div class="sc-field"><span>isBPL</span><span class="sc-type">Boolean</span></div>
+    </div>
+    <!-- School -->
+    <div class="schema-card">
+      <div class="sc-header"><div class="sc-icon" style="background:rgba(34,197,94,.2)">🏫</div><div class="sc-name">School</div></div>
+      <div class="sc-field"><span>udiseCode</span><span class="sc-type">String? @unique</span></div>
+      <div class="sc-field"><span>schoolType</span><span class="sc-type">SchoolType</span></div>
+      <div class="sc-field"><span>medium</span><span class="sc-type">Medium[]</span></div>
+      <div class="sc-field"><span>districtId</span><span class="sc-type">UUID @FK</span></div>
+      <div class="sc-field"><span>hasInternet</span><span class="sc-type">Boolean</span></div>
+      <div class="sc-field"><span>hasOfflineHub</span><span class="sc-type">Boolean</span></div>
+    </div>
+    <!-- Lesson -->
+    <div class="schema-card">
+      <div class="sc-header"><div class="sc-icon" style="background:rgba(168,85,247,.2)">📖</div><div class="sc-name">Lesson + LessonContent</div></div>
+      <div class="sc-field"><span>titleMarathi</span><span class="sc-type">String?</span></div>
+      <div class="sc-field"><span>contentType</span><span class="sc-type">VIDEO|AUDIO|TEXT…</span></div>
+      <div class="sc-field"><span>status</span><span class="sc-type">DRAFT|REVIEW|PUBLISHED</span></div>
+      <div class="sc-field"><span>language</span><span class="sc-type">MARATHI|ENGLISH|HINDI</span></div>
+      <div class="sc-field"><span>isOfflineAvailable</span><span class="sc-type">Boolean</span></div>
+      <div class="sc-field"><span>fileSizeBytes</span><span class="sc-type">BigInt?</span></div>
+    </div>
+    <!-- Assessment -->
+    <div class="schema-card">
+      <div class="sc-header"><div class="sc-icon" style="background:rgba(234,179,8,.2)">📝</div><div class="sc-name">Assessment Engine</div></div>
+      <div class="sc-field"><span>questionType</span><span class="sc-type">MCQ|TF|FILL|DRAW…</span></div>
+      <div class="sc-field"><span>options</span><span class="sc-type">Json (MCQ choices)</span></div>
+      <div class="sc-field"><span>bloomLevel</span><span class="sc-type">REMEMBER…CREATE</span></div>
+      <div class="sc-field"><span>isAIGenerated</span><span class="sc-type">Boolean</span></div>
+      <div class="sc-field"><span>isRandomized</span><span class="sc-type">Boolean</span></div>
+      <div class="sc-field"><span>autoGraded</span><span class="sc-type">Boolean</span></div>
+    </div>
+    <!-- Gamification -->
+    <div class="schema-card">
+      <div class="sc-header"><div class="sc-icon" style="background:rgba(251,191,36,.2)">🏆</div><div class="sc-name">Gamification</div></div>
+      <div class="sc-field"><span>LearningPoints.level</span><span class="sc-type">Int (1-10)</span></div>
+      <div class="sc-field"><span>LearningPoints.levelName</span><span class="sc-type">String (Marathi)</span></div>
+      <div class="sc-field"><span>Badge.criteria</span><span class="sc-type">Json</span></div>
+      <div class="sc-field"><span>LearningStreak.current</span><span class="sc-type">Int</span></div>
+      <div class="sc-field"><span>SkillPassport.skills</span><span class="sc-type">Json</span></div>
+      <div class="sc-field"><span>PointTransaction.reason</span><span class="sc-type">String</span></div>
+    </div>
+    <!-- AI -->
+    <div class="schema-card">
+      <div class="sc-header"><div class="sc-icon" style="background:rgba(6,182,212,.2)">🤖</div><div class="sc-name">AI Platform</div></div>
+      <div class="sc-field"><span>agentType</span><span class="sc-type">TUTOR|CAREER|QUIZ…</span></div>
+      <div class="sc-field"><span>language</span><span class="sc-type">MARATHI|ENGLISH|HINDI</span></div>
+      <div class="sc-field"><span>sessionId</span><span class="sc-type">String @unique</span></div>
+      <div class="sc-field"><span>tokenCount</span><span class="sc-type">Int</span></div>
+      <div class="sc-field"><span>AIFeedback.rating</span><span class="sc-type">Int (1-5)</span></div>
+      <div class="sc-field"><span>AIMessage.role</span><span class="sc-type">USER|ASSISTANT</span></div>
+    </div>
+    <!-- Career -->
+    <div class="schema-card">
+      <div class="sc-header"><div class="sc-icon" style="background:rgba(34,197,94,.2)">🎯</div><div class="sc-name">Career + Scholarships</div></div>
+      <div class="sc-field"><span>CareerPath.category</span><span class="sc-type">ENGINEERING|ITI…</span></div>
+      <div class="sc-field"><span>roadmapSteps</span><span class="sc-type">Json</span></div>
+      <div class="sc-field"><span>Scholarship.grade</span><span class="sc-type">Int[] (eligible grades)</span></div>
+      <div class="sc-field"><span>castCategory</span><span class="sc-type">String[]</span></div>
+      <div class="sc-field"><span>annualIncomeLimitRs</span><span class="sc-type">Float?</span></div>
+      <div class="sc-field"><span>status</span><span class="sc-type">OPEN…AWARDED</span></div>
+    </div>
+    <!-- Community -->
+    <div class="schema-card">
+      <div class="sc-header"><div class="sc-icon" style="background:rgba(249,115,22,.2)">🌱</div><div class="sc-name">Community + Wellbeing</div></div>
+      <div class="sc-field"><span>VLCMember.role</span><span class="sc-type">LEADER|MEMBER</span></div>
+      <div class="sc-field"><span>CommunityEvent.type</span><span class="sc-type">COMPETITION|WORKSHOP</span></div>
+      <div class="sc-field"><span>MoodCheckIn.mood</span><span class="sc-type">VERY_HAPPY…TIRED</span></div>
+      <div class="sc-field"><span>WellbeingGoal.targetDays</span><span class="sc-type">Int</span></div>
+      <div class="sc-field"><span>Mentorship.isActive</span><span class="sc-type">Boolean</span></div>
+      <div class="sc-field"><span>AuditLog.action</span><span class="sc-type">CREATE|UPDATE…</span></div>
+    </div>
+  </div>
+
+  <!-- Tech Stack -->
+  <div style="margin-top:28px">
+    <div class="h-label" style="margin-bottom:16px">Technology Stack</div>
+    <div class="tech-section">
+      <div class="tech-chip"><div class="tech-icon">⚡</div><div class="tech-name">Fastify</div><div class="tech-role">REST API</div></div>
+      <div class="tech-chip"><div class="tech-icon">🐘</div><div class="tech-name">PostgreSQL 16</div><div class="tech-role">Primary DB</div></div>
+      <div class="tech-chip"><div class="tech-icon">🔴</div><div class="tech-name">Redis 7</div><div class="tech-role">Cache + Queue</div></div>
+      <div class="tech-chip"><div class="tech-icon">🐍</div><div class="tech-name">FastAPI</div><div class="tech-role">AI Service</div></div>
+      <div class="tech-chip"><div class="tech-icon">🦜</div><div class="tech-name">LangGraph</div><div class="tech-role">AI Agents</div></div>
+      <div class="tech-chip"><div class="tech-icon">🎯</div><div class="tech-name">Qdrant</div><div class="tech-role">Vector DB</div></div>
+      <div class="tech-chip"><div class="tech-icon">▲</div><div class="tech-name">Next.js 14</div><div class="tech-role">Web Portals</div></div>
+      <div class="tech-chip"><div class="tech-icon">💙</div><div class="tech-name">Flutter</div><div class="tech-role">Mobile App</div></div>
+      <div class="tech-chip"><div class="tech-icon">🐳</div><div class="tech-name">Docker ECS</div><div class="tech-role">Deploy</div></div>
+      <div class="tech-chip"><div class="tech-icon">☁️</div><div class="tech-name">AWS Mumbai</div><div class="tech-role">Cloud</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end canvas -->
+
+<script>
+function showPortal(id, btn) {
+  document.querySelectorAll('.portal-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.portal-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('p-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleAIChat() {
+  const overlay = document.getElementById('ai-overlay');
+  const panel = document.getElementById('ai-panel');
+  const isOpen = panel.style.display !== 'none';
+  overlay.style.display = isOpen ? 'none' : 'block';
+  panel.style.display = isOpen ? 'none' : 'block';
+}
+
+// Mood button interaction
+document.querySelectorAll('.mood-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('sel'));
+    this.classList.add('sel');
+  });
+});
+</script>
+</body>
+</html>
